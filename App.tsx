@@ -5,41 +5,37 @@
  * @format
  */
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { useState } from 'react';
+import { StatusBar } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import AuthScreen from './src/screens/AuthScreen';
+import LoginScreen from './src/screens/LoginScreen';
+import RegisterScreen from './src/screens/RegisterScreen';
+
+type Screen = 'login' | 'register' | 'authenticated';
 
 function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+  const [screen, setScreen] = useState<Screen>('login');
+  const [authenticatedEmail, setAuthenticatedEmail] = useState('');
+
+  const showAuthenticated = (email: string) => {
+    setAuthenticatedEmail(email);
+    setScreen('authenticated');
+  };
 
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
+      <StatusBar barStyle="light-content" />
+      {screen === 'login' ? (
+        <LoginScreen onLogin={showAuthenticated} onRegisterPress={() => setScreen('register')} />
+      ) : screen === 'register' ? (
+        <RegisterScreen onLoginPress={() => setScreen('login')} onRegister={showAuthenticated} />
+      ) : (
+        <AuthScreen email={authenticatedEmail} onLogout={() => setScreen('login')} />
+      )}
     </SafeAreaProvider>
   );
 }
-
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
-
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
 
 export default App;

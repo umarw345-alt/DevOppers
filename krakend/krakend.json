@@ -1,0 +1,44 @@
+{
+  "$schema": "https://www.krakend.io/schema/krakend.json",
+  "version": 3,
+  "name": "login-authenticator-gateway",
+  "timeout": "3s",
+  "cache_ttl": "0s",
+  "endpoints": [
+    {
+      "endpoint": "/health",
+      "method": "GET",
+      "backend": [
+        {
+          "url_pattern": "/health",
+          "host": ["http://auth-service:5000"]
+        }
+      ]
+    },
+    {
+      "endpoint": "/v1/auth/register",
+      "method": "POST",
+      "backend": [{"url_pattern": "/v1/auth/register", "host": ["http://auth-service:5000"]}]
+    },
+    {
+      "endpoint": "/v1/auth/login",
+      "method": "POST",
+      "backend": [{"url_pattern": "/v1/auth/login", "host": ["http://auth-service:5000"]}]
+    },
+    {
+      "endpoint": "/v1/auth/refresh",
+      "method": "POST",
+      "backend": [{"url_pattern": "/v1/auth/refresh", "host": ["http://auth-service:5000"]}]
+    },
+    {
+      "endpoint": "/v1/auth/logout",
+      "method": "POST",
+      "backend": [{"url_pattern": "/v1/auth/logout", "host": ["http://auth-service:5000"]}]
+    },
+    {
+      "endpoint": "/v1/auth/input",
+      "method": "POST",
+      "backend": [{"url_pattern": "/v1/auth/input", "host": ["http://auth-service:5000"]}]
+    }
+  ]
+}

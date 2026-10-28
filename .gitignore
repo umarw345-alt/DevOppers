@@ -66,6 +66,18 @@ yarn-error.log
 # testing
 /coverage
 
+# Authentication service and local secrets
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+/secrets/*.pem
+/postgres-data/
+
 # Yarn
 .yarn/*
 !.yarn/patches
@@ -73,3 +85,14 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Expo
+.expo
+dist/
+web-build/
+
+# Jest
+.jest-cache
+
+# IOS
+ios/
