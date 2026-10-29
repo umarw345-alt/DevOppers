@@ -27,6 +27,7 @@ class Link(BaseModel):
 
 class Contact(BaseModel):
     name: str = Field(min_length=1)
+    headline: str | None = Field(default=None, max_length=80)
     email: EmailStr | None = None
     phone: str | None = None
     location: str | None = None

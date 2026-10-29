@@ -38,3 +38,5 @@ a { color: #1a4f8b; }
 .skill-list li { border: 1px solid #cbd2d9; padding: 2px 10px; }
 
 main { padding-bottom: 48px; }
+
+.headline { margin: 0 0 12px; font-size: 1.15rem; color: #52606d; }

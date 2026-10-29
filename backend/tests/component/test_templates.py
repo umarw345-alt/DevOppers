@@ -45,6 +45,7 @@ def test_full_resume_shows_all_content(full_resume, template_id):
     html = build(full_resume, template_id)["index.html"]
     for text in [
         "Jordan Lee",
+        "Backend Engineer",
         "jordan.lee@example.com",
         "(408) 555-0134",
         "San Jose State University",
@@ -73,6 +74,7 @@ def test_minimal_resume_skips_empty_sections(minimal_resume, template_id):
     for heading in [*SECTION_HEADINGS, "About"]:
         assert f">{heading}</h2>" not in html
     assert 'class="contact"' not in html
+    assert 'class="headline"' not in html
 
 
 def test_hidden_fields_are_not_in_the_html(full_resume, template_id):

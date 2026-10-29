@@ -21,6 +21,16 @@ def test_minimal_resume_defaults_to_empty_sections(minimal_resume):
     assert resume.hidden_fields == []
 
 
+def test_headline_is_optional(full_resume, minimal_resume):
+    assert Resume.model_validate(full_resume).contact.headline == "Backend Engineer"
+    assert Resume.model_validate(minimal_resume).contact.headline is None
+
+
+def test_overly_long_headline_is_rejected():
+    with pytest.raises(ValidationError):
+        Resume.model_validate({"contact": {"name": "A", "headline": "x" * 81}})
+
+
 def test_name_is_required():
     with pytest.raises(ValidationError):
         Resume.model_validate({"contact": {}})

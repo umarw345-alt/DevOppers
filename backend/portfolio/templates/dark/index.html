@@ -3,6 +3,7 @@
 {% block body %}
 <header class="hero">
   <h1>{{ resume.contact.name }}</h1>
+  {{ s.headline(resume.contact) }}
   {% if resume.summary %}<p class="tagline">{{ resume.summary }}</p>{% endif %}
   {{ s.contact_list(resume.contact) }}
 </header>

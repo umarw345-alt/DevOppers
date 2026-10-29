@@ -1,5 +1,9 @@
 {# Building blocks every template reuses. Each one renders nothing when its data is empty. #}
 
+{% macro headline(contact) %}
+{% if contact.headline %}<p class="headline">{{ contact.headline }}</p>{% endif %}
+{% endmacro %}
+
 {% macro contact_list(contact) %}
 {% if contact.email or contact.phone or contact.location or contact.links %}
 <ul class="contact">

@@ -49,3 +49,5 @@ a { color: #1d4ed8; }
   aside { width: 300px; flex-shrink: 0; padding: 48px 28px; }
   main { flex: 1; max-width: 760px; padding: 32px 40px 48px; }
 }
+
+.headline { margin: -8px 0 20px; font-size: 1.05rem; color: #bfdbfe; }

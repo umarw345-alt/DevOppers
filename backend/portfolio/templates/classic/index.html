@@ -3,6 +3,7 @@
 {% block body %}
 <header>
   <h1>{{ resume.contact.name }}</h1>
+  {{ s.headline(resume.contact) }}
   {{ s.contact_list(resume.contact) }}
 </header>
 <main>
