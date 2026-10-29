@@ -54,7 +54,7 @@ ALL_SECTIONS: tuple[SectionName, ...] = get_args(SectionName)
 TEMPLATES: dict[TemplateId, TemplateDefaults] = {
     "classic": TemplateDefaults("#8b2e2e", ("#fdfcfa",), "serif", ALL_SECTIONS),
     "modern": TemplateDefaults("#1e3a8a", ("#ffffff", "#f1f5f9"), "sans", ALL_SECTIONS),
-    "minimal": TemplateDefaults("#555555", ("#fafafa",), "mono", ALL_SECTIONS),
+    "minimal": TemplateDefaults("#b4321f", ("#fafafa",), "mono", ALL_SECTIONS),
     "dark": TemplateDefaults("#fbbf24", ("#0b0f17", "#151b28"), "sans", ALL_SECTIONS),
 }
 
