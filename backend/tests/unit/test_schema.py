@@ -49,7 +49,9 @@ def test_iso_dates_are_accepted(value):
     assert Entry(organization="X", start=value).start == value
 
 
-@pytest.mark.parametrize("value", ["June 2024", "06/2024", "Present", "24-06"])
+@pytest.mark.parametrize(
+    "value", ["June 2024", "06/2024", "Present", "24-06", "2024-13", "2024-00", "2024-06-32"]
+)
 def test_non_iso_dates_are_rejected(value):
     with pytest.raises(ValidationError):
         Entry(organization="X", start=value)

@@ -3,7 +3,10 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, EmailStr, Field, HttpUrl, StringConstraints, model_validator
 
 # ISO 8601 year, year-month, or full date: "2024", "2024-06", "2024-06-15"
-IsoDate = Annotated[str, StringConstraints(pattern=r"^\d{4}(-\d{2}(-\d{2})?)?$")]
+IsoDate = Annotated[
+    str,
+    StringConstraints(pattern=r"^\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12]\d|3[01]))?)?$"),
+]
 
 HideableField = Literal[
     "contact.email",
