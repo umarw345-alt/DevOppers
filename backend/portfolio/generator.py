@@ -71,6 +71,15 @@ def render(resume: Resume, template_id: str, theme: Theme | None = None) -> dict
     return {"index.html": html, "style.css": css}
 
 
+STYLESHEET_LINK = '<link rel="stylesheet" href="style.css">'
+
+
+def inline_css(files: dict[str, str]) -> str:
+    """Merge render()'s files into one HTML page with the CSS embedded, so the
+    frontend can show a live preview (e.g. in an iframe) without hosting style.css."""
+    return files["index.html"].replace(STYLESHEET_LINK, f"<style>{files['style.css']}</style>", 1)
+
+
 def write_site(files: dict[str, str], out_dir: Path) -> None:
     """Save the files from render() into a folder, e.g. to preview a site locally."""
     out_dir.mkdir(parents=True, exist_ok=True)

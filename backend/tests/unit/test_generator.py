@@ -6,6 +6,7 @@ from portfolio.generator import (
     UnknownTemplateError,
     date_range,
     format_date,
+    inline_css,
     remove_hidden,
     render,
     write_site,
@@ -112,3 +113,8 @@ def test_write_site_creates_files(tmp_path):
     write_site({"index.html": "<h1>Hi</h1>", "style.css": "body {}"}, out)
     assert (out / "index.html").read_text() == "<h1>Hi</h1>"
     assert (out / "style.css").read_text() == "body {}"
+
+
+def test_inline_css_embeds_the_stylesheet():
+    files = {"index.html": '<head><link rel="stylesheet" href="style.css"></head>', "style.css": "body {}"}
+    assert inline_css(files) == "<head><style>body {}</style></head>"
