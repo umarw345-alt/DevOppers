@@ -2,10 +2,12 @@
 {% import "_sections.html" as s %}
 {% block body %}
 <header class="hero">
-  <h1>{{ resume.contact.name }}</h1>
-  {{ s.headline(resume.contact) }}
-  {% if resume.summary %}<p class="tagline">{{ resume.summary }}</p>{% endif %}
-  {{ s.contact_list(resume.contact) }}
+  <div class="hero-inner">
+    <h1>{{ resume.contact.name }}</h1>
+    {{ s.headline(resume.contact) }}
+    {% if resume.summary %}<p class="tagline">{{ resume.summary }}</p>{% endif %}
+    {{ s.contact_list(resume.contact) }}
+  </div>
 </header>
 <main>
   {% for name in sections if name != "summary" %}{{ s.section(name, resume) }}{% endfor %}
