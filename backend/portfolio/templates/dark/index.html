@@ -8,9 +8,6 @@
   {{ s.contact_list(resume.contact) }}
 </header>
 <main>
-  {{ s.entries("Experience", resume.experience) }}
-  {{ s.projects(resume.projects) }}
-  {{ s.entries("Education", resume.education) }}
-  {{ s.skills(resume.skills) }}
+  {% for name in sections if name != "summary" %}{{ s.section(name, resume) }}{% endfor %}
 </main>
 {% endblock %}

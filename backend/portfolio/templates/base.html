@@ -7,8 +7,11 @@
   {% if resume.summary %}
   <meta name="description" content="{{ resume.summary }}">
   {% endif %}
-  {% block head %}{% endblock %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="{{ font_url }}">
   <link rel="stylesheet" href="style.css">
+  <style>{{ theme_css }}</style>
 </head>
 <body>
 {% block body %}{% endblock %}

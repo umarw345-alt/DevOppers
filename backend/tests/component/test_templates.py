@@ -3,7 +3,8 @@ from html.parser import HTMLParser
 import pytest
 
 from portfolio.generator import TEMPLATE_IDS, render
-from portfolio.schema import Resume
+from portfolio.schema import Resume, Theme
+from portfolio.themes import ThemeError
 
 SECTION_HEADINGS = ["Experience", "Education", "Projects", "Skills"]
 
@@ -110,3 +111,34 @@ def test_basic_accessibility(full_resume, template_id):
 def test_page_title_uses_name(full_resume, template_id):
     html = build(full_resume, template_id)["index.html"]
     assert "<title>Jordan Lee | Portfolio</title>" in html
+
+
+def test_default_theme_is_applied(full_resume, template_id):
+    page = parse(build(full_resume, template_id)["index.html"])
+    font_links = [l["href"] for l in page.find("link") if "fonts.googleapis.com/css2" in l.get("href", "")]
+    assert len(font_links) == 1
+
+
+READABLE_ACCENT = {"classic": "#0f5132", "modern": "#0f5132", "minimal": "#0f5132", "dark": "#5eead4"}
+UNREADABLE_ACCENT = {"classic": "#ffffff", "modern": "#ffffff", "minimal": "#ffffff", "dark": "#000000"}
+
+
+def test_custom_theme_is_applied(full_resume, template_id):
+    accent = READABLE_ACCENT[template_id]
+    theme = Theme(accent=accent, font="display", section_order=["education", "experience"])
+    html = render(Resume.model_validate(full_resume), template_id, theme)["index.html"]
+    assert f"--accent: {accent};" in html
+    assert "Playfair+Display" in html
+    assert html.index(">Education</h2>") < html.index(">Experience</h2>")
+
+
+def test_unreadable_accent_raises(full_resume, template_id):
+    theme = Theme(accent=UNREADABLE_ACCENT[template_id])
+    with pytest.raises(ThemeError):
+        render(Resume.model_validate(full_resume), template_id, theme)
+
+
+def test_every_section_renders_exactly_once(full_resume, template_id):
+    html = build(full_resume, template_id)["index.html"]
+    for heading in SECTION_HEADINGS:
+        assert html.count(f">{heading}</h2>") == 1

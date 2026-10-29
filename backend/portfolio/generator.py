@@ -1,12 +1,11 @@
 from pathlib import Path
-from typing import Literal, get_args
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
+from markupsafe import Markup
 
-from portfolio.schema import Entry, Resume
+from portfolio.schema import Entry, Resume, Theme
+from portfolio.themes import TEMPLATE_IDS, resolve_theme, theme_css
 
-TemplateId = Literal["classic", "modern", "minimal", "dark"]
-TEMPLATE_IDS = get_args(TemplateId)
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
@@ -55,13 +54,19 @@ env = Environment(
 env.filters["date_range"] = date_range
 
 
-def render(resume: Resume, template_id: str) -> dict[str, str]:
-    """Build the portfolio site for a resume using one of the TEMPLATE_IDS.
-    Returns the site's files as {filename: contents}, ready to save or upload."""
+def render(resume: Resume, template_id: str, theme: Theme | None = None) -> dict[str, str]:
+    """Build the portfolio site for a resume using one of the TEMPLATE_IDS and the
+    user's optional theme. Returns the site's files as {filename: contents},
+    ready to save or upload. Raises ThemeError for an unreadable accent color."""
     if template_id not in TEMPLATE_IDS:
         raise UnknownTemplateError(f"Unknown template: {template_id}")
-    public = remove_hidden(resume)
-    html = env.get_template(f"{template_id}/index.html").render(resume=public)
+    resolved = resolve_theme(template_id, theme)
+    html = env.get_template(f"{template_id}/index.html").render(
+        resume=remove_hidden(resume),
+        sections=resolved.sections,
+        font_url=resolved.font.url,
+        theme_css=Markup(theme_css(resolved)),
+    )
     css = (TEMPLATES_DIR / template_id / "style.css").read_text(encoding="utf-8")
     return {"index.html": html, "style.css": css}
 

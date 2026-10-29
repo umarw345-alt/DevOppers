@@ -9,10 +9,7 @@
     {{ s.skills(resume.skills) }}
   </aside>
   <main>
-    {{ s.summary(resume.summary) }}
-    {{ s.entries("Experience", resume.experience) }}
-    {{ s.projects(resume.projects) }}
-    {{ s.entries("Education", resume.education) }}
+    {% for name in sections if name != "skills" %}{{ s.section(name, resume) }}{% endfor %}
   </main>
 </div>
 {% endblock %}

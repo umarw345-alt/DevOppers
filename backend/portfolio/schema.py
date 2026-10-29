@@ -8,6 +8,10 @@ IsoDate = Annotated[
     StringConstraints(pattern=r"^\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12]\d|3[01]))?)?$"),
 ]
 
+HexColor = Annotated[str, StringConstraints(pattern=r"^#[0-9a-fA-F]{6}$")]
+FontPairing = Literal["serif", "sans", "mono", "display"]
+SectionName = Literal["summary", "experience", "projects", "education", "skills"]
+
 HideableField = Literal[
     "contact.email",
     "contact.phone",
@@ -66,3 +70,17 @@ class Resume(BaseModel):
     projects: list[Project] = []
     skills: list[str] = []
     hidden_fields: list[HideableField] = []
+
+
+class Theme(BaseModel):
+    """Optional customization picked by the user. Anything left as None uses the template's default."""
+
+    accent: HexColor | None = None
+    font: FontPairing | None = None
+    section_order: list[SectionName] | None = None
+
+    @model_validator(mode="after")
+    def no_duplicate_sections(self):
+        if self.section_order and len(set(self.section_order)) != len(self.section_order):
+            raise ValueError("section_order has duplicates")
+        return self

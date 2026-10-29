@@ -7,10 +7,6 @@
     {{ s.headline(resume.contact) }}
     {{ s.contact_list(resume.contact) }}
   </header>
-  {{ s.summary(resume.summary) }}
-  {{ s.entries("Experience", resume.experience) }}
-  {{ s.projects(resume.projects) }}
-  {{ s.entries("Education", resume.education) }}
-  {{ s.skills(resume.skills) }}
+  {% for name in sections %}{{ s.section(name, resume) }}{% endfor %}
 </main>
 {% endblock %}

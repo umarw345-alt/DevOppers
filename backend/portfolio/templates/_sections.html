@@ -1,5 +1,14 @@
 {# Building blocks every template reuses. Each one renders nothing when its data is empty. #}
 
+{% macro section(name, resume) %}
+{% if name == "summary" %}{{ summary(resume.summary) }}
+{% elif name == "experience" %}{{ entries("Experience", resume.experience) }}
+{% elif name == "projects" %}{{ projects(resume.projects) }}
+{% elif name == "education" %}{{ entries("Education", resume.education) }}
+{% elif name == "skills" %}{{ skills(resume.skills) }}
+{% endif %}
+{% endmacro %}
+
 {% macro headline(contact) %}
 {% if contact.headline %}<p class="headline">{{ contact.headline }}</p>{% endif %}
 {% endmacro %}

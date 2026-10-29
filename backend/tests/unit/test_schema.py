@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from portfolio.schema import Entry, Resume
+from portfolio.schema import Entry, Resume, Theme
 
 
 def test_full_resume_is_valid(full_resume):
@@ -91,3 +91,34 @@ def test_unknown_hidden_field_is_rejected(full_resume):
     full_resume["hidden_fields"] = ["contact.ssn"]
     with pytest.raises(ValidationError):
         Resume.model_validate(full_resume)
+
+
+def test_empty_theme_is_valid():
+    theme = Theme()
+    assert theme.accent is None and theme.font is None and theme.section_order is None
+
+
+@pytest.mark.parametrize("color", ["#1A2b3C", "#000000"])
+def test_hex_accent_is_accepted(color):
+    assert Theme(accent=color).accent == color
+
+
+@pytest.mark.parametrize("color", ["red", "#fff", "#12345g", "1a2b3c", "#1a2b3c; }"])
+def test_bad_accent_is_rejected(color):
+    with pytest.raises(ValidationError):
+        Theme(accent=color)
+
+
+def test_unknown_font_is_rejected():
+    with pytest.raises(ValidationError):
+        Theme(font="comic-sans")
+
+
+def test_unknown_section_is_rejected():
+    with pytest.raises(ValidationError):
+        Theme(section_order=["experience", "hobbies"])
+
+
+def test_duplicate_sections_are_rejected():
+    with pytest.raises(ValidationError):
+        Theme(section_order=["skills", "skills"])
