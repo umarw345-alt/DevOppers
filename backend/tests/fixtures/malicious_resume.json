@@ -1,0 +1,9 @@
+{
+  "contact": {
+    "name": "<script>alert('xss')</script>",
+    "headline": "<iframe src='https://evil.example'></iframe>",
+    "location": "<img src=x onerror=alert(1)>"
+  },
+  "summary": "\"><b onclick=\"alert(1)\">hi</b>",
+  "skills": ["<iframe src='https://evil.example'></iframe>"]
+}
