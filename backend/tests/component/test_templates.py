@@ -142,3 +142,9 @@ def test_every_section_renders_exactly_once(full_resume, template_id):
     html = build(full_resume, template_id)["index.html"]
     for heading in SECTION_HEADINGS:
         assert html.count(f">{heading}</h2>") == 1
+
+
+@pytest.mark.parametrize("name, initials", [("Jordan Lee", "JL"), ("Cher", "C"), ("mary ann de la cruz", "MA")])
+def test_modern_monogram_uses_initials(name, initials):
+    html = build({"contact": {"name": name}}, "modern")["index.html"]
+    assert f'<div class="monogram" aria-hidden="true">{initials}</div>' in html

@@ -1,12 +1,16 @@
 {% extends "base.html" %}
 {% import "_sections.html" as s %}
+{% set initials = (resume.contact.name.split() | map("first") | join)[:2] | upper %}
 {% block body %}
 <div class="layout">
   <aside>
-    <h1>{{ resume.contact.name }}</h1>
-    {{ s.headline(resume.contact) }}
-    {{ s.contact_list(resume.contact) }}
-    {{ s.skills(resume.skills) }}
+    <div class="sidebar">
+      {% if initials %}<div class="monogram" aria-hidden="true">{{ initials }}</div>{% endif %}
+      <h1>{{ resume.contact.name }}</h1>
+      {{ s.headline(resume.contact) }}
+      {{ s.contact_list(resume.contact) }}
+      {{ s.skills(resume.skills) }}
+    </div>
   </aside>
   <main>
     {% for name in sections if name != "skills" %}{{ s.section(name, resume) }}{% endfor %}
