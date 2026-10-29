@@ -1,0 +1,81 @@
+{# Building blocks every template reuses. Each one renders nothing when its data is empty. #}
+
+{% macro contact_list(contact) %}
+{% if contact.email or contact.phone or contact.location or contact.links %}
+<ul class="contact">
+  {% if contact.email %}<li><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></li>{% endif %}
+  {% if contact.phone %}<li>{{ contact.phone }}</li>{% endif %}
+  {% if contact.location %}<li>{{ contact.location }}</li>{% endif %}
+  {% for link in contact.links %}
+  <li><a href="{{ link.url }}" rel="noopener">{{ link.label }}</a></li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endmacro %}
+
+{% macro summary(text) %}
+{% if text %}
+<section class="summary" aria-labelledby="summary-heading">
+  <h2 id="summary-heading">About</h2>
+  <p>{{ text }}</p>
+</section>
+{% endif %}
+{% endmacro %}
+
+{% macro entries(heading, items) %}
+{% if items %}
+<section class="entries" aria-labelledby="{{ heading | lower }}-heading">
+  <h2 id="{{ heading | lower }}-heading">{{ heading }}</h2>
+  {% for item in items %}
+  <article class="entry">
+    <div class="entry-head">
+      <h3>{{ item.title or item.organization }}</h3>
+      {% if item | date_range %}<span class="dates">{{ item | date_range }}</span>{% endif %}
+    </div>
+    <p class="entry-org">
+      {% if item.title %}{{ item.organization }}{% endif %}
+      {% if item.title and item.location %} · {% endif %}
+      {% if item.location %}{{ item.location }}{% endif %}
+    </p>
+    {% if item.bullets %}
+    <ul>
+      {% for bullet in item.bullets %}<li>{{ bullet }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+{% endmacro %}
+
+{% macro projects(items) %}
+{% if items %}
+<section class="projects" aria-labelledby="projects-heading">
+  <h2 id="projects-heading">Projects</h2>
+  {% for project in items %}
+  <article class="entry">
+    <h3>
+      {% if project.url %}<a href="{{ project.url }}" rel="noopener">{{ project.name }}</a>{% else %}{{ project.name }}{% endif %}
+    </h3>
+    {% if project.description %}<p>{{ project.description }}</p>{% endif %}
+    {% if project.bullets %}
+    <ul>
+      {% for bullet in project.bullets %}<li>{{ bullet }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </article>
+  {% endfor %}
+</section>
+{% endif %}
+{% endmacro %}
+
+{% macro skills(items) %}
+{% if items %}
+<section class="skills" aria-labelledby="skills-heading">
+  <h2 id="skills-heading">Skills</h2>
+  <ul class="skill-list">
+    {% for skill in items %}<li>{{ skill }}</li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endmacro %}

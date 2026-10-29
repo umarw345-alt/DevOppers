@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ resume.contact.name }} | Portfolio</title>
+  {% if resume.summary %}
+  <meta name="description" content="{{ resume.summary }}">
+  {% endif %}
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+{% block body %}{% endblock %}
+</body>
+</html>

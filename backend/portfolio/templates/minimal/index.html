@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% import "_sections.html" as s %}
+{% block body %}
+<main>
+  <header>
+    <h1>{{ resume.contact.name }}</h1>
+    {{ s.contact_list(resume.contact) }}
+  </header>
+  {{ s.summary(resume.summary) }}
+  {{ s.entries("Experience", resume.experience) }}
+  {{ s.projects(resume.projects) }}
+  {{ s.entries("Education", resume.education) }}
+  {{ s.skills(resume.skills) }}
+</main>
+{% endblock %}
