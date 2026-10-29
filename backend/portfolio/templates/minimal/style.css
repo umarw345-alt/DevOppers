@@ -56,15 +56,17 @@ h1 {
 
 .contact {
   list-style: none;
-  margin: 20px 0 0;
+  margin: 20px 0 0 -32px;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 2px 0;
   font-size: 0.9rem;
   color: var(--muted);
+  /* Every item starts with a separator; this hides the one on whichever item begins a line */
+  clip-path: inset(-4px -4px -4px 24px);
 }
-.contact li:not(:last-child)::after { content: "/"; margin: 0 12px; color: var(--rule); }
+.contact li::before { content: "/"; display: inline-block; width: 32px; text-align: center; color: var(--rule); }
 
 /* Sections */
 
