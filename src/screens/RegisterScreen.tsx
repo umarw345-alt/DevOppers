@@ -3,11 +3,13 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput,
 import { authColors, authStyles } from './authStyles';
 
 type RegisterScreenProps = {
-  onRegister: (email: string, password: string) => void;
+  onRegister: (email: string, password: string) => Promise<void>;
   onLoginPress: () => void;
+  isLoading: boolean;
+  error?: string;
 };
 
-const RegisterScreen = ({ onRegister, onLoginPress }: RegisterScreenProps) => {
+const RegisterScreen = ({ onRegister, onLoginPress, isLoading, error: serverError }: RegisterScreenProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -28,7 +30,7 @@ const RegisterScreen = ({ onRegister, onLoginPress }: RegisterScreenProps) => {
       return;
     }
     setError('');
-    onRegister(normalizedEmail, password);
+    onRegister(normalizedEmail, password).catch(() => undefined);
   };
 
   return (
@@ -45,8 +47,8 @@ const RegisterScreen = ({ onRegister, onLoginPress }: RegisterScreenProps) => {
           <TextInput accessibilityLabel="Registration password" autoCapitalize="none" autoComplete="new-password" onChangeText={setPassword} placeholder="At least 8 characters" placeholderTextColor={authColors.muted} secureTextEntry style={[authStyles.input, error ? authStyles.inputError : undefined]} textContentType="newPassword" value={password} />
           <Text style={authStyles.label}>Confirm password</Text>
           <TextInput accessibilityLabel="Confirm registration password" autoCapitalize="none" autoComplete="new-password" onChangeText={setConfirmPassword} placeholder="Repeat your password" placeholderTextColor={authColors.muted} secureTextEntry style={[authStyles.input, error ? authStyles.inputError : undefined]} textContentType="newPassword" value={confirmPassword} />
-          {error ? <Text style={authStyles.error}>{error}</Text> : null}
-          <Pressable accessibilityRole="button" onPress={submit} style={authStyles.primaryButton}><Text style={authStyles.primaryButtonText}>CREATE ACCOUNT</Text></Pressable>
+          {error || serverError ? <Text style={authStyles.error}>{error || serverError}</Text> : null}
+          <Pressable accessibilityRole="button" disabled={isLoading} onPress={submit} style={[authStyles.primaryButton, isLoading ? authStyles.disabledButton : undefined]}><Text style={authStyles.primaryButtonText}>{isLoading ? 'CREATING ACCOUNT…' : 'CREATE ACCOUNT'}</Text></Pressable>
           <Pressable accessibilityRole="button" onPress={onLoginPress} style={authStyles.secondaryAction}><Text style={authStyles.secondaryActionText}>Already have an account? Log in</Text></Pressable>
           <Text style={authStyles.helper}>Your password is hashed by the authentication service.</Text>
         </View>

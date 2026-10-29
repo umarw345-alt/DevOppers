@@ -33,11 +33,13 @@
     {
       "endpoint": "/v1/auth/logout",
       "method": "POST",
+      "input_headers": ["Authorization"],
       "backend": [{"url_pattern": "/v1/auth/logout", "host": ["http://auth-service:5000"]}]
     },
     {
       "endpoint": "/v1/auth/input",
       "method": "POST",
+      "input_headers": ["Authorization"],
       "backend": [{"url_pattern": "/v1/auth/input", "host": ["http://auth-service:5000"]}]
     }
   ]

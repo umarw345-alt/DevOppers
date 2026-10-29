@@ -86,7 +86,15 @@ def _identity(request: Request, authorization: str | None):
 
 
 def access_identity(request: Request, authorization: Annotated[str | None, Header()] = None):
-    return _identity(request, authorization)
+    user_id, session_id = _identity(request, authorization)
+    db = _db(request)
+    try:
+        session = db.get(Session, session_id)
+        if session is None or session.user_id != user_id or session.revoked_at is not None or session.expires_at <= utc_now():
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        return user_id, session_id
+    finally:
+        db.close()
 
 
 @router.get("/health")
@@ -103,6 +111,8 @@ def register(payload: Credentials, request: Request):
             raise HTTPException(status_code=409, detail="Unable to register account")
         user = User(id=uuid4(), email=email, password_hash=build_password_hasher(request.app.state.settings).hash(payload.password), created_at=utc_now())
         db.add(user)
+        # Ensure the parent row exists before inserting the session's FK row.
+        db.flush()
         session, refresh_token = _create_session(request, db, user.id)
         try:
             db.commit()
@@ -144,11 +154,13 @@ def refresh(payload: RefreshRequest, request: Request):
     try:
         session = db.scalar(select(Session).where(Session.refresh_token_hash == hash_refresh_token(payload.refresh_token)).with_for_update())
         now = utc_now()
-        if session is None or session.expires_at <= now or session.revoked_at is not None:
+        if session is None or session.expires_at <= now:
             raise HTTPException(status_code=401, detail="Unauthorized")
         if session.used_at is not None:
             db.execute(update(Session).where(Session.token_family_id == session.token_family_id).values(revoked_at=now))
             db.commit()
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        if session.revoked_at is not None:
             raise HTTPException(status_code=401, detail="Unauthorized")
         if session.last_activity_at is None or session.last_activity_at + timedelta(minutes=request.app.state.settings.afk_timeout_minutes) <= now:
             session.revoked_at = now
@@ -163,21 +175,22 @@ def refresh(payload: RefreshRequest, request: Request):
         db.close()
 
 
-@router.post("/v1/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/v1/auth/logout")
 def logout(request: Request, identity=Depends(access_identity)):
     user_id, session_id = identity
     db = _db(request)
     try:
         session = db.get(Session, session_id)
         if session is not None and session.user_id == user_id:
-            session.revoked_at = utc_now()
+            now = utc_now()
+            db.execute(update(Session).where(Session.token_family_id == session.token_family_id).values(revoked_at=now))
             db.commit()
-        return None
+        return {"status": "ok"}
     finally:
         db.close()
 
 
-@router.post("/v1/auth/input", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/v1/auth/input")
 def record_input(request: Request, identity=Depends(access_identity)):
     user_id, session_id = identity
     db = _db(request)
@@ -186,9 +199,9 @@ def record_input(request: Request, identity=Depends(access_identity)):
         if session is None or session.user_id != user_id or session.revoked_at is not None:
             raise HTTPException(status_code=401, detail="Unauthorized")
         now = utc_now()
-        if session.last_activity_at is None or now - session.last_activity_at >= timedelta(minutes=5):
+        if session.last_activity_at is None or now - session.last_activity_at >= timedelta(minutes=3):
             session.last_activity_at = now
             db.commit()
-        return None
+        return {"status": "ok"}
     finally:
         db.close()

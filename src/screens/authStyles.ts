@@ -9,6 +9,7 @@ export const authColors = {
   field: '#f7f9fc',
   border: '#c9d2df',
   danger: '#b42318',
+  success: '#067647',
 };
 
 export const authStyles = StyleSheet.create({
@@ -24,9 +25,12 @@ export const authStyles = StyleSheet.create({
   inputError: { borderColor: authColors.danger },
   error: { color: authColors.danger, fontSize: 13, marginTop: 8 },
   primaryButton: { alignItems: 'center', backgroundColor: authColors.blue, borderRadius: 18, justifyContent: 'center', marginTop: 20, minHeight: 44 },
+  disabledButton: { opacity: 0.65 },
   primaryButtonText: { color: authColors.white, fontSize: 14, fontWeight: '800', letterSpacing: 0.8 },
   secondaryAction: { alignItems: 'center', marginTop: 18 },
   secondaryActionText: { color: authColors.blue, fontSize: 14, fontWeight: '700' },
   helper: { color: authColors.muted, fontSize: 12, marginTop: 16, textAlign: 'center' },
   successHelper: { color: authColors.ink },
+  status: { fontSize: 13, marginTop: 12, textAlign: 'center' },
+  statusSuccess: { color: authColors.success },
 });
