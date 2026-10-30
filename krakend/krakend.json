@@ -4,6 +4,18 @@
   "name": "login-authenticator-gateway",
   "timeout": "3s",
   "cache_ttl": "0s",
+  "extra_config": {
+    "security/cors": {
+      "allow_origins": [
+        "http://localhost:8081",
+        "http://127.0.0.1:8081"
+      ],
+      "allow_methods": ["GET", "HEAD", "POST", "OPTIONS"],
+      "allow_headers": ["Origin", "Authorization", "Content-Type", "Accept"],
+      "allow_credentials": false,
+      "max_age": "1h"
+    }
+  },
   "endpoints": [
     {
       "endpoint": "/health",

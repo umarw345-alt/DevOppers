@@ -1,99 +1,187 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Login Authenticator
 
-# Getting Started
+A React Native and Expo mobile authentication client backed by KrakenD, FastAPI, and PostgreSQL.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Architecture
 
-## Step 1: Start Metro
-
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
-
-To start the Metro dev server, run the following command from the root of your React Native project:
-
-```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+```text
+React Native / Expo
+        |
+KrakenD gateway :8080
+        |
+FastAPI authentication service :5000
+        |
+PostgreSQL :5432
 ```
 
-## Step 2: Build and run your app
+The client stores only raw access and refresh tokens in `expo-secure-store`. FastAPI stores Argon2id password hashes and refresh-token hashes in PostgreSQL.
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+## Prerequisites
 
-### Android
+- Node.js and npm
+- Docker Desktop with the Linux engine running
+- A modern web browser for the primary web app
+- Android Studio and an Android emulator for optional Android development
+- Xcode and CocoaPods for optional iOS development
 
-```sh
-# Using npm
-npm run android
+## Start the backend
 
-# OR using Yarn
-yarn android
+Create a local environment file from `.env.example` and ensure development RS256 keys exist in the ignored `secrets/` directory:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
-### iOS
+Do not commit `.env`, private keys, or database data.
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+Start PostgreSQL, run the Alembic migration job, FastAPI, and KrakenD:
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+```powershell
+docker compose up --build -d
+docker compose ps
+```
+
+The migration container is a one-shot job. `Exited (0)` means the migration completed successfully.
+
+Verify the gateway:
+
+```powershell
+Invoke-RestMethod http://localhost:8080/health
+```
+
+Expected response:
+
+```text
+status
+------
+ok
+```
+
+View service logs when troubleshooting:
+
+```powershell
+docker compose logs -f auth-service
+docker compose logs -f krakend
+```
+
+Stop the backend stack:
+
+```powershell
+docker compose down
+```
+
+## Run the web app
+
+The web client reaches the local gateway through `localhost`. Keep these values in `.env`:
+
+```env
+EXPO_PUBLIC_API_BASE_URL=http://localhost:8080
+CORS_ALLOWED_ORIGINS=http://localhost:8081,http://127.0.0.1:8081
+```
+
+Install JavaScript dependencies:
+
+```powershell
+npm install
+```
+
+Start the Expo web development server:
+
+```powershell
+npm run web
+```
+
+Expo will open the web app in a browser. If it does not open automatically, visit the URL shown in the terminal, usually `http://localhost:8081`.
+
+The browser origin must be listed in `CORS_ALLOWED_ORIGINS`. Do not use `*` when authentication requests are enabled.
+
+To create a production web bundle:
+
+```powershell
+npx expo export --platform web
+```
+
+The exported files are written to `dist/` and can be served by a static web host. The deployed web origin and API URL must be configured for the deployment environment.
+
+## Run the optional Android app
+
+The Android emulator must be connected through ADB before launching the app:
+
+```powershell
+adb devices
+```
+
+For the Android emulator, override the browser API URL with the host-machine address:
+
+```powershell
+$env:EXPO_PUBLIC_API_BASE_URL="http://10.0.2.2:8080"
+npx expo run:android --device Medium_Phone
+```
+
+Start Expo for JavaScript development and Fast Refresh:
+
+```powershell
+npx expo start --dev-client --android
+```
+
+Start Expo for JavaScript development and Fast Refresh:
+
+```powershell
+npx expo start --dev-client --android
+```
+
+Use the project emulator rather than `Fire_TV_Emulation` unless Fire TV is specifically being tested.
+
+## Run the iOS app
+
+Install native dependencies after the first clone or after native dependency changes:
 
 ```sh
 bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
 bundle exec pod install
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+Then build the iOS app:
 
 ```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+npx expo run:ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## Tests and validation
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+```powershell
+node_modules\.bin\tsc.cmd --noEmit
+cmd /c npm.cmd test -- --runInBand
+cmd /c npm.cmd run lint
+.venv\Scripts\python.exe -m pytest backend\tests -q
+```
 
-## Step 3: Modify your app
+## Authentication endpoints
 
-Now that you have successfully run the app, let's make changes!
+KrakenD forwards these routes to FastAPI:
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+```text
+POST /v1/auth/register
+POST /v1/auth/login
+POST /v1/auth/refresh
+POST /v1/auth/logout
+POST /v1/auth/input
+```
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+## Troubleshooting
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+If the Android app opens the wrong target, check connected devices:
 
-## Congratulations! :tada:
+```powershell
+adb devices -l
+```
 
-You've successfully run and modified your React Native App. :partying_face:
+If port `8081` is already in use by another Metro server, stop the old server and restart with a clean cache:
 
-### Now what?
+```powershell
+npx expo start --clear --port 8081
+```
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+If the gateway cannot be reached, confirm Docker Desktop is running, KrakenD is listening on port `8080`, and the Android emulator is using `10.0.2.2` rather than `localhost`.
 
 # DevOppers

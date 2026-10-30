@@ -25,6 +25,7 @@ class Settings:
     argon2_parallelism: int
     argon2_hash_length: int
     argon2_salt_length: int
+    cors_allowed_origins: tuple[str, ...] = ()
 
 
 def load_settings() -> Settings:
@@ -44,4 +45,9 @@ def load_settings() -> Settings:
         argon2_parallelism=_int_env("ARGON2_PARALLELISM", 4),
         argon2_hash_length=_int_env("ARGON2_HASH_LENGTH", 32),
         argon2_salt_length=_int_env("ARGON2_SALT_LENGTH", 16),
+        cors_allowed_origins=tuple(
+            origin.strip()
+            for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+            if origin.strip()
+        ),
     )
