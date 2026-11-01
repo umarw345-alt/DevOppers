@@ -1,6 +1,6 @@
 # Login Authenticator
 
-A React Native and Expo mobile authentication client backed by KrakenD, FastAPI, and PostgreSQL.
+Allows for users to login or register an account to access the main application.
 
 ## Architecture
 
