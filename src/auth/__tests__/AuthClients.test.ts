@@ -45,8 +45,10 @@ describe('authentication client', () => {
     }) as jest.Mock;
 
     await expect(refresh('old-refresh')).resolves.toEqual({
-      accessToken: 'new-access',
-      refreshToken: 'new-refresh',
+      tokens: {
+        accessToken: 'new-access',
+        refreshToken: 'new-refresh',
+      },
     });
   });
 

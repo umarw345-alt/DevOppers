@@ -8,6 +8,11 @@ def _int_env(name: str, default: int) -> int:
     return int(value) if value is not None else default
 
 
+def _bool_env(name: str, default: bool) -> bool:
+    value = os.getenv(name)
+    return default if value is None else value.lower() in {"1", "true", "yes", "on"}
+
+
 @dataclass(frozen=True)
 class Settings:
     database_url: str
@@ -26,6 +31,8 @@ class Settings:
     argon2_hash_length: int
     argon2_salt_length: int
     cors_allowed_origins: tuple[str, ...] = ()
+    web_cookie_secure: bool = False
+    web_cookie_samesite: str = "lax"
 
 
 def load_settings() -> Settings:
@@ -50,4 +57,6 @@ def load_settings() -> Settings:
             for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
             if origin.strip()
         ),
+        web_cookie_secure=_bool_env("WEB_COOKIE_SECURE", False),
+        web_cookie_samesite=os.getenv("WEB_COOKIE_SAMESITE", "lax"),
     )

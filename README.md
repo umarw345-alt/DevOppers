@@ -14,7 +14,7 @@ FastAPI authentication service :5000
 PostgreSQL :5432
 ```
 
-The client stores only raw access and refresh tokens in `expo-secure-store`. FastAPI stores Argon2id password hashes and refresh-token hashes in PostgreSQL.
+Native clients store raw access and refresh tokens in `expo-secure-store`. The web client does not persist tokens in JavaScript storage: FastAPI sets HttpOnly access and refresh cookies, plus a readable CSRF companion cookie. FastAPI stores Argon2id password hashes and refresh-token hashes in PostgreSQL.
 
 ## Prerequisites
 
@@ -94,6 +94,8 @@ npm run web
 Expo will open the web app in a browser. If it does not open automatically, visit the URL shown in the terminal, usually `http://localhost:8081`.
 
 The browser origin must be listed in `CORS_ALLOWED_ORIGINS`. Do not use `*` when authentication requests are enabled.
+
+On web, register and login establish the HttpOnly cookies. Refresh, logout, and the debounced input heartbeat send the cookie automatically and include the CSRF companion token. On Android and iOS, the existing Secure Store and bearer-token behavior remains in place.
 
 To create a production web bundle:
 
