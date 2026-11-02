@@ -94,5 +94,9 @@ web-build/
 # Jest
 .jest-cache
 
+# Local progress notes
+TODAY_PROGRESS.local.md
+CODE_REVIEW.local.md
+
 # IOS
 ios/

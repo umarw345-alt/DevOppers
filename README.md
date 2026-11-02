@@ -41,6 +41,16 @@ docker compose up --build -d
 docker compose ps
 ```
 
+For the teammate-friendly guided startup flow, run these scripts from the project root:
+
+```powershell
+.\scripts\start-postgres.ps1
+.\scripts\start-fastapi.ps1
+.\scripts\start-krakend.ps1
+```
+
+The FastAPI script waits for PostgreSQL, runs `alembic upgrade head`, and only starts FastAPI after migrations succeed. The KrakenD script then starts the gateway and verifies `http://localhost:8080/health`.
+
 The migration container is a one-shot job. `Exited (0)` means the migration completed successfully.
 
 Verify the gateway:

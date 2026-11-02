@@ -199,8 +199,8 @@ def login(payload: Credentials, request: Request, response: Response):
 
 
 @router.post("/v1/auth/refresh", response_model=TokenResponse | WebAuthResponse)
-def refresh(request: Request, response: Response, payload: RefreshRequest):
-    refresh_token_value = payload.refresh_token
+def refresh(request: Request, response: Response, payload: RefreshRequest | None = None):
+    refresh_token_value = payload.refresh_token if payload is not None else None
     if _is_web_request(request):
         refresh_token_value = request.cookies.get(REFRESH_COOKIE)
     if not refresh_token_value:
