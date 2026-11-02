@@ -1,0 +1,50 @@
+{
+  "contact": {
+    "name": "Jordan Lee",
+    "email": "jordan.lee@example.com",
+    "phone": "(408) 555-0134",
+    "location": "San Jose, CA",
+    "links": [
+      {"label": "GitHub", "url": "https://github.com/jordanlee"},
+      {"label": "LinkedIn", "url": "https://www.linkedin.com/in/jordanlee"}
+    ]
+  },
+  "summary": "Computer engineering student focused on backend systems and developer tools.",
+  "education": [
+    {
+      "organization": "San Jose State University",
+      "title": "B.S. Computer Engineering",
+      "location": "San Jose, CA",
+      "start": "2023-08",
+      "end": "2027-05",
+      "bullets": ["GPA 3.7", "Dean's List"]
+    }
+  ],
+  "experience": [
+    {
+      "organization": "Acme Robotics",
+      "title": "Software Engineering Intern",
+      "location": "Santa Clara, CA",
+      "start": "2025-06",
+      "end": "2025-08",
+      "bullets": ["Built a REST API for sensor telemetry", "Cut CI time by 40%"]
+    },
+    {
+      "organization": "SJSU Computer Science Dept.",
+      "title": "Teaching Assistant",
+      "start": "2025-09",
+      "end": null,
+      "bullets": ["Hold weekly lab sections for 30 students"]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Portable Resume",
+      "description": "Wallet pass that links to a generated portfolio site.",
+      "url": "https://github.com/example/portable-resume",
+      "bullets": ["FastAPI backend", "Static site generator"]
+    }
+  ],
+  "skills": ["Python", "FastAPI", "PostgreSQL", "Docker", "Git"],
+  "hidden_fields": []
+}
