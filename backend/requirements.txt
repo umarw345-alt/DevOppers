@@ -1,0 +1,13 @@
+PyMuPDF
+pytesseract
+Pillow
+opencv-python-headless
+numpy
+pydantic
+email-validator
+fastapi
+uvicorn[standard]
+python-multipart
+rapidfuzz
+python-dateutil
+python-dotenv
