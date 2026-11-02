@@ -168,6 +168,14 @@ cmd /c npm.cmd run lint
 .venv\Scripts\python.exe -m pytest backend\tests -q
 ```
 
+Run the full authentication integration tests against the running Docker services:
+
+```powershell
+.\scripts\test-integration.ps1
+```
+
+These tests send real requests through KrakenD to FastAPI and PostgreSQL. They are opt-in because Docker Desktop and the migrated database must be running first.
+
 ## Authentication endpoints
 
 KrakenD forwards these routes to FastAPI:
