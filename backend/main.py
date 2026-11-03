@@ -1,8 +1,20 @@
 """Portable Resume backend API."""
 
-from fastapi import FastAPI, UploadFile
+from fastapi import FastAPI, HTTPException, UploadFile
+from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
+
+from portfolio.generator import inline_css, render
+from portfolio.schema import Resume, Theme
+from portfolio.themes import FONTS, TEMPLATES, TemplateId, ThemeError
 
 app = FastAPI(title="Portable Resume API", version="0.1.0")
+
+
+class PreviewRequest(BaseModel):
+    resume: Resume
+    template_id: TemplateId
+    theme: Theme | None = None
 
 
 # Health
@@ -74,6 +86,29 @@ def save_resume():
 def generate_portfolio():
     """Generate (or regenerate) the static portfolio from the saved resume
     and return its public URL."""
+
+
+@app.post("/portfolio/preview", tags=["portfolio"], response_class=HTMLResponse)
+def preview_portfolio(request: PreviewRequest):
+    """Render the portfolio as one HTML page (CSS inlined) without saving or
+    deploying it. Used by the frontend's template picker and customization screen."""
+    try:
+        files = render(request.resume, request.template_id, request.theme)
+    except ThemeError as error:
+        raise HTTPException(status_code=422, detail=str(error))
+    return inline_css(files)
+
+
+@app.get("/portfolio/templates", tags=["portfolio"])
+def list_portfolio_templates():
+    """List the site templates with their default theme, plus the font choices."""
+    return {
+        "templates": [
+            {"id": template_id, "accent": d.accent, "font": d.font, "sections": list(d.sections)}
+            for template_id, d in TEMPLATES.items()
+        ],
+        "fonts": list(FONTS),
+    }
 
 
 @app.get("/portfolio", tags=["portfolio"])

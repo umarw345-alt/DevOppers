@@ -1,0 +1,144 @@
+:root {
+  --ink: #1b1e24;
+  --muted: #5d6470;
+  --rule: #e4e1dc;
+  --accent: #8b2e2e;
+  --paper: #fdfcfa;
+  --chip: #f4f1ec;
+  --font-heading: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-body: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 48px 20px 64px;
+}
+
+/* Header */
+
+header { padding-bottom: 28px; border-bottom: 1px solid var(--ink); }
+
+h1 {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: clamp(2.25rem, 7vw, 3.25rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+.headline {
+  margin: 8px 0 0;
+  font-family: var(--font-heading);
+  font-style: italic;
+  font-size: 1.3rem;
+  color: var(--accent);
+}
+
+.contact {
+  list-style: none;
+  margin: 18px 0 0 -22px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 0;
+  font-size: 0.93rem;
+  color: var(--muted);
+  /* Every item starts with a separator; this hides the one on whichever item begins a line */
+  clip-path: inset(-4px -4px -4px 16px);
+}
+.contact li::before { content: "·"; display: inline-block; width: 22px; text-align: center; color: var(--rule); }
+
+/* Sections */
+
+section { padding: 28px 0; border-bottom: 1px solid var(--rule); }
+section:last-child { border-bottom: 0; }
+
+h2 {
+  margin: 0 0 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.summary p { margin: 0; font-family: var(--font-heading); font-size: 1.15rem; line-height: 1.65; }
+
+/* Entries */
+
+.entry + .entry { margin-top: 22px; }
+
+.entry-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 2px 16px;
+}
+
+h3 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+h3 a { color: inherit; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+h3 a:hover { text-decoration-color: var(--accent); }
+
+.dates {
+  font-size: 0.88rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.entry-org { margin: 2px 0 0; color: var(--muted); }
+.entry-org:empty { display: none; }
+.entry > p:not(.entry-org) { margin: 4px 0 0; color: var(--muted); }
+
+.entry ul { margin: 8px 0 0; padding-left: 1.1em; }
+.entry li { margin-top: 4px; padding-left: 4px; }
+.entry li::marker { color: var(--accent); }
+
+/* Skills */
+
+.skill-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.skill-list li {
+  padding: 4px 12px;
+  font-size: 0.9rem;
+  background: var(--chip);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+}
+
+/* Links and focus */
+
+a { color: var(--accent); text-underline-offset: 3px; }
+.contact a { color: var(--ink); text-decoration-color: var(--rule); }
+.contact a:hover { text-decoration-color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+/* Wider screens: section labels sit in a left column */
+
+@media (min-width: 720px) {
+  .page { padding: 80px 40px 96px; }
+  section { display: grid; grid-template-columns: 150px 1fr; column-gap: 40px; padding: 36px 0; }
+  section > h2 { grid-column: 1; grid-row: 1 / span 20; margin: 0; padding-top: 4px; }
+  section > :not(h2) { grid-column: 2; }
+}
+
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .page { max-width: none; padding: 0; }
+  section { padding: 14px 0; break-inside: avoid; }
+  a { color: inherit; text-decoration: none; }
+}
