@@ -52,6 +52,7 @@ def web_headers(csrf_token=None):
     return headers
 
 
+
 def cookie_value(jar, name):
     return next((cookie.value for cookie in jar if cookie.name == name), None)
 
@@ -62,6 +63,24 @@ def credentials():
         "password": "Password123!",
     }
 
+def false_email():
+    return {
+        "email": f"false-{uuid4().hex}@false.org",
+        "password": "PasswordFalse123!",
+    }
+
+def false_pass(account):
+    return {
+        "email": account["email"],
+        "password": "fakepassword123!",
+    }
+
+def native_headers():
+    headers = {
+        "Content-Type": "application/json",
+        "X-Client-Platform": "native",
+    }
+    return headers
 
 def test_gateway_health():
     opener, _ = make_opener()
@@ -141,13 +160,12 @@ def test_duplicate_registration_is_rejected():
 def test_native_register_refresh_and_logout_uses_json_and_bearer_tokens():
     opener, _ = make_opener()
     account = credentials()
-    native_headers = {"Content-Type": "application/json", "X-Client-Platform": "native"}
 
     register_status, register_body = send(
         opener,
         "/v1/auth/register",
         payload=account,
-        headers=native_headers,
+        headers=native_headers(),
     )
     assert register_status == 201
     assert register_body["access_token"]
@@ -157,7 +175,7 @@ def test_native_register_refresh_and_logout_uses_json_and_bearer_tokens():
         opener,
         "/v1/auth/refresh",
         payload={"refresh_token": register_body["refresh_token"]},
-        headers=native_headers,
+        headers=native_headers(),
     )
     assert refresh_status == 200
     assert refresh_body["access_token"]
@@ -168,9 +186,88 @@ def test_native_register_refresh_and_logout_uses_json_and_bearer_tokens():
         opener,
         "/v1/auth/logout",
         headers={
-            **native_headers,
+            **native_headers(),
             "Authorization": f"Bearer {refresh_body['access_token']}",
         },
     )
+    assert logout_status == 200
+    assert logout_body == {"status": "ok"}
+
+# def test_logout_or_afk_revokes_token_family():
+#     opener, jar = make_opener()
+#     account = credentials()
+
+#     register_status, register_body = send(
+#         opener,
+#         "/v1/auth/register",
+#         payload=account,
+#         headers=web_headers(),
+#     )
+#     assert register_status == 201
+#     assert register_body["access_token"]
+#     assert register_body["refresh_token"]
+
+
+#     assert cookie_value(jar, "auth_access_token")
+#     assert cookie_value(jar, "auth_refresh_token")
+#     csrf_token = cookie_value(jar, "auth_csrf_token")
+
+#     logout_status, logout_body = send(
+#         opener,
+#         "v1/auth/logout",
+#         headers={csrf_token}
+#     )
+
+#     assert logout_status == 200
+#     assert logout_body == {"status": "ok"}
+
+
+def test_incorrect_credentials_fail_login():
+    opener, jar = make_opener()
+    account = credentials()
+    falseAccount = false_email()
+    falsePass = false_pass(account)
+
+    register_status, register_body = send(
+        opener,
+        "/v1/auth/register",
+        payload=account,
+        headers=web_headers(),
+    )
+
+    assert register_status == 201
+    assert register_body["user"]["email"] == account["email"]
+    assert cookie_value(jar, "auth_access_token")
+    assert cookie_value(jar, "auth_refresh_token")
+    csrf_token = cookie_value(jar, "auth_csrf_token")
+    assert csrf_token
+
+
+    login_status, login_body = send(
+        opener,
+        "/v1/auth/login",
+        payload=falseAccount,
+        headers=web_headers(),
+    )
+
+    assert login_status == 401
+    assert login_body["detail"]
+
+    login_status, login_body = send(
+        opener,
+        "/v1/auth/login",
+        payload=falsePass,
+        headers=web_headers(),
+    )
+
+    assert login_status == 401
+    assert login_body["detail"]
+
+    logout_status, logout_body = send(
+        opener,
+        "/v1/auth/logout",
+        headers=web_headers(csrf_token)
+    )
+
     assert logout_status == 200
     assert logout_body == {"status": "ok"}

@@ -61,4 +61,49 @@ describe('authentication client', () => {
       expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer access-token' }) }),
     );
   });
+
+  it('does not allow duplicate registration', async () => {
+    globalThis.fetch = jest.fn().mockResolvedValue(
+      {
+        ok: false,
+        status: 409,
+        json: async () => ({ detail: 'Email is already in use!', status: 409, kind:'authentication'}),
+      }
+    ) as jest.Mock;
+
+    await expect(register('example@example.com', 'examplepassword')).rejects.toMatchObject({
+      message: 'Email is already in use!',
+      kind: 'authentication',
+      status: 409
+    })
+  });
+
+  it('does not accept expired or revoked tokens', async () => {
+    globalThis.fetch = jest.fn().mockResolvedValue( {
+      ok: false,
+      status: 401,
+      json: async () => ({ detail: 'Session expired'})
+    }) as jest.Mock;
+
+    await(expect(refresh('expired-token'))).rejects.toMatchObject({
+      message: 'Session expired',
+      status: 401,
+      kind: 'authentication',
+    });
+  });
+
+
+  // it('does not allow refresh reuse', async () => {
+  //   globalThis.fetch = jest.fn().mockResolvedValue( {
+  //     ok: false,
+  //     status: 410,
+  //     json: async () => ({detail: 'Refresh reuse is not allowed', kind: 'authentication', status: 410}),
+  //   }) as jest.Mock;
+
+  //   await expect(refresh('old_refresh')).rejects.toMatchObject( {
+  //     detail: 'Refresh refuse is not allowed',
+  //     kind: 'authentication',
+  //     status: 410,
+  //   })
+  // });
 });

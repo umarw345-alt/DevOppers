@@ -72,6 +72,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     else if (response.status === 429) {
       detail = 'Too many requests. Please try again.';
     }
+    else if (response.status === 410) {
+      detail = 'Refresh token is expired/invalid.'
+    }
 
     try {
       const body = await response.json();
@@ -80,7 +83,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       // Keep the safe fallback message when the gateway returns no JSON body.
     }
 
-    const kind: AuthClientErrorKind = response.status === 401 || response.status === 409 || response.status === 429
+    const kind: AuthClientErrorKind = response.status === 401 || response.status === 409 || response.status === 429 || response.status === 410
       ? 'authentication'
       : 'server';
     throw new AuthClientError(detail, kind, response.status);
