@@ -1,0 +1,70 @@
+{
+  "$schema": "https://www.krakend.io/schema/krakend.json",
+  "version": 3,
+  "name": "login-authenticator-gateway",
+  "timeout": "3s",
+  "cache_ttl": "0s",
+  "extra_config": {
+    "security/cors": {
+      "allow_origins": [
+        "http://localhost:8081",
+        "http://127.0.0.1:8081"
+      ],
+      "allow_methods": ["GET", "HEAD", "POST", "OPTIONS"],
+      "allow_headers": ["Origin", "Authorization", "Content-Type", "Accept", "X-Client-Platform", "X-CSRF-Token"],
+      "allow_credentials": true,
+      "max_age": "1h"
+    }
+  },
+  "endpoints": [
+    {
+      "endpoint": "/health",
+      "method": "GET",
+      "backend": [
+        {
+          "url_pattern": "/health",
+          "host": ["http://auth-service:5000"]
+        }
+      ]
+    },
+    {
+      "endpoint": "/v1/auth/register",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "input_headers": ["Accept", "Content-Type", "X-Client-Platform"],
+      "output_headers": ["Set-Cookie"],
+      "backend": [{"url_pattern": "/v1/auth/register", "host": ["http://auth-service:5000"]}]
+    },
+    {
+      "endpoint": "/v1/auth/login",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "input_headers": ["Accept", "Content-Type", "X-Client-Platform"],
+      "output_headers": ["Set-Cookie"],
+      "backend": [{"url_pattern": "/v1/auth/login", "host": ["http://auth-service:5000"]}]
+    },
+    {
+      "endpoint": "/v1/auth/refresh",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "input_headers": ["Accept", "Content-Type", "Cookie", "X-Client-Platform", "X-CSRF-Token"],
+      "output_headers": ["Set-Cookie"],
+      "backend": [{"url_pattern": "/v1/auth/refresh", "host": ["http://auth-service:5000"]}]
+    },
+    {
+      "endpoint": "/v1/auth/logout",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "input_headers": ["Accept", "Authorization", "Content-Type", "Cookie", "X-Client-Platform", "X-CSRF-Token"],
+      "output_headers": ["Set-Cookie"],
+      "backend": [{"url_pattern": "/v1/auth/logout", "host": ["http://auth-service:5000"]}]
+    },
+    {
+      "endpoint": "/v1/auth/input",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "input_headers": ["Accept", "Authorization", "Content-Type", "Cookie", "X-Client-Platform", "X-CSRF-Token"],
+      "backend": [{"url_pattern": "/v1/auth/input", "host": ["http://auth-service:5000"]}]
+    }
+  ]
+}
