@@ -337,5 +337,27 @@ def test_afk_timeout():
     
     assert logout_status == 401
     assert logout_body["detail"] == "Unauthorized"
-    
-    
+
+@pytest.mark.parametrize(
+    "malformed_token",
+    [
+        pytest.param("not-a-jwt", id="missing-jwt-sections"),
+        pytest.param("header.payload", id="missing-signature"),
+        pytest.param("header.invalid_payload.signature", id="invalid-payload"),
+    ],
+)
+
+def test_malformed_access_jwt_is_rejected(malformed_token):
+    opener, _ = make_opener()
+
+    status, body = send(
+        opener,
+        "/v1/auth/input",
+        headers={
+            **native_headers(),
+            "Authorization": f"Bearer {malformed_token}",
+        },
+    )
+
+    assert status == 401
+    assert body["detail"] == "Unauthorized"
