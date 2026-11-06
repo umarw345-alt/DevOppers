@@ -1,0 +1,14 @@
+Update for the Portable Resume app built in this conversation.
+
+Apply the archive contents inside frontend/portable-resume-mobile, replacing App.tsx, src/screens/Menu.tsx and tests/regression.cjs.
+No new dependencies are needed. Keep src/api.ts and your existing color choices.
+
+Changes:
+- BACK on My Portfolios returns to the landing/login screen and clears the in-memory login session and unsaved editor draft.
+- Every profile has a visible Delete profile button; Cancel keeps it, Delete removes that specific local profile.
+- Existing storage saves deletions, including deleting every profile. Saved profiles remain when using BACK.
+- Android hardware Back from the list also returns to landing.
+
+Checks: strict TypeScript passed; 27 regression checks passed with mocked native APIs/storage/server responses, including Back navigation and deletion through the visible button with restart recovery. Not tested on a physical phone.
+
+Run npm run typecheck and npm test from the app folder to repeat the automated checks.

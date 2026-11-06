@@ -5,7 +5,7 @@ import Landing from './src/screens/Landing';
 import Menu, { Site } from './src/screens/Menu';
 import AddResume from './src/screens/AddResume';
 import Template from './src/screens/Template';
-import { Resume } from './src/api';
+import { Resume, clearSession } from './src/api';
 import { loadSites, saveSites } from './src/storage';
 import { Pill, Screen, T } from './src/theme';
 
@@ -59,7 +59,7 @@ function Content() {
     await updateSites((previous) => [s, ...previous]);
     setResume(null); setScreen('menu');
   }} />;
-  return <Menu sites={sites} onAdd={() => setScreen('add')} onDelete={(id) => {
+  return <Menu sites={sites} onBack={() => { clearSession(); setResume(null); setScreen('landing'); }} onAdd={() => setScreen('add')} onDelete={(id) => {
     updateSites((previous) => previous.filter((s) => s.id !== id)).catch(() => Alert.alert('Could not delete', 'Your portfolios were kept. Please try again.'));
   }} />;
 }

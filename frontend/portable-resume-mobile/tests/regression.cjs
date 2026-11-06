@@ -2,8 +2,10 @@ const fs=require('fs'),path=require('path'),vm=require('vm'),assert=require('nod
 const babel=require('@babel/core'),React=require('react'),{create,act}=require('react-test-renderer');
 global.IS_REACT_ACT_ENVIRONMENT=true;
 const base=path.resolve(__dirname, '..');const cache=new Map();
-const native={BackHandler:{addEventListener:()=>({remove:()=>{}})},Platform:{OS:'android',select:o=>o.android??o.default},StyleSheet:{create:o=>o},StatusBar:'StatusBar',Alert:{alert:()=>{}},Share:{share:async()=>{} }};
+let lastAlert;
+const native={BackHandler:{addEventListener:()=>({remove:()=>{}})},Platform:{OS:'android',select:o=>o.android??o.default},StyleSheet:{create:o=>o},StatusBar:'StatusBar',Alert:{alert:(...args)=>{lastAlert=args}},Share:{share:async()=>{} }};
 for(const n of ['View','Text','TextInput','Pressable','ScrollView','FlatList','Modal','ActivityIndicator'])native[n]=n;
+native.FlatList=({data,renderItem,ListEmptyComponent})=>React.createElement('FlatList',null,data.length?data.map((item)=>React.createElement(React.Fragment,{key:item.id},renderItem({item}))):ListEmptyComponent);
 let pickerReject=false, pickerCanceled=false, stored=null, failSave=false, failLoad=false;
 const storage={getItem:async()=>{if(failLoad)throw Error('read failed');return stored},setItem:async(k,v)=>{if(failSave)throw Error('disk full');stored=v}};
 const mocks={'@react-native-async-storage/async-storage':storage,'react-native-safe-area-context':{SafeAreaProvider:'SafeAreaProvider',useSafeAreaInsets:()=>({top:24,bottom:24,left:0,right:0})},'react-native':native,'expo-linear-gradient':{LinearGradient:'LinearGradient'},'react-native-webview':{WebView:'WebView'},'expo-document-picker':{getDocumentAsync:async()=>{if(pickerReject)throw Error('picker failed');if(pickerCanceled)return {canceled:true};return {canceled:false,assets:[{name:'resume.pdf',uri:'file://resume.pdf',size:100}]}}}};
@@ -32,7 +34,7 @@ api.extractResume=async()=>structuredClone(api.SAMPLE);api.getTemplates=async()=
 const App=load(base+'/App.tsx').default;const {Pill,Field}=load(base+'/src/theme.tsx');
 const Landing=load(base+'/src/screens/Landing.tsx').default,Menu=load(base+'/src/screens/Menu.tsx').default,Template=load(base+'/src/screens/Template.tsx').default;
 let ui;const pill=label=>ui.root.findAllByType(Pill).find(n=>n.props.label.includes(label));
-await act(async()=>{ui=create(React.createElement(App))});await act(async()=>ui.root.findByType(Landing).props.onDone());await act(async()=>ui.root.findByType(Menu).props.onAdd());
+await act(async()=>{ui=create(React.createElement(App))});await act(async()=>ui.root.findByType(Landing).props.onDone());await test('Menu Back returns to landing and permits reopening demo',async()=>{await act(async()=>pill('BACK').props.onPress());assert.equal(ui.root.findAllByType(Landing).length,1);await act(async()=>ui.root.findByType(Landing).props.onDone());assert.equal(ui.root.findAllByType(Menu).length,1)});await act(async()=>ui.root.findByType(Menu).props.onAdd());
 await test('Picker failures displayed without rejecting',async()=>{pickerReject=true;await act(async()=>await pill('CHOOSE').props.onPress());assert.ok(JSON.stringify(ui.toJSON()).includes('picker failed'));pickerReject=false});
 await test('Cancel picker keeps Continue disabled',async()=>{pickerCanceled=true;await act(async()=>await pill('CHOOSE').props.onPress());assert.equal(pill('CONTINUE').props.disabled,true);pickerCanceled=false});
 await test('Demo upload → edit → template',async()=>{await act(async()=>await pill('CHOOSE').props.onPress());await act(async()=>ui.root.findAllByType(Field).find(n=>n.props.label==='Name').props.onChangeText('Osman'));await act(async()=>pill('CONTINUE').props.onPress());assert.equal(ui.root.findByType(Template).props.resume.name,'Osman')});
@@ -42,7 +44,13 @@ await test('Failed preview clears old content',async()=>{await act(async()=>awai
 await test('Save failure keeps draft and allows retry',async()=>{failSave=true;await act(async()=>await pill('ADD TO MY LIST').props.onPress());assert.equal(ui.root.findByType(Template).props.resume.name,'Osman');assert.ok(JSON.stringify(ui.toJSON()).includes('Could not save'));failSave=false});
 await test('Saving retains resume and selected theme',async()=>{await act(async()=>await pill('ADD TO MY LIST').props.onPress());const sites=ui.root.findByType(Menu).props.sites;assert.equal(sites.length,4);assert.equal(sites[0].resume.name,'Osman');assert.equal(sites[0].theme.accent,'#8b2e2e');assert.equal(sites[0].url,'');assert.equal(JSON.parse(stored).length,4)});
 await test('Restart restores saved portfolio',async()=>{await act(async()=>{ui.unmount();ui=create(React.createElement(App))});await act(async()=>ui.root.findByType(Landing).props.onDone());assert.equal(ui.root.findByType(Menu).props.sites[0].resume.name,'Osman')});
-await test('Delete failure preserves list',async()=>{failSave=true;await act(async()=>ui.root.findByType(Menu).props.onDelete(ui.root.findByType(Menu).props.sites[0].id));assert.equal(ui.root.findByType(Menu).props.sites.length,4);failSave=false});
+await test('Visible delete offers Cancel and removes only selected profile after confirmation',async()=>{
+const button=ui.root.findAllByType('Pressable').find(n=>n.props.accessibilityLabel==='Delete profile Osman');assert.ok(button);
+await act(async()=>button.props.onPress());assert.equal(lastAlert[0],'Delete profile?');assert.equal(lastAlert[2][0].text,'Cancel');assert.equal(ui.root.findByType(Menu).props.sites.length,4);
+await act(async()=>lastAlert[2].find(b=>b.text==='Delete').onPress());assert.equal(ui.root.findByType(Menu).props.sites.length,3);assert.ok(!JSON.parse(stored).some(s=>s.name==='Osman'));
+await act(async()=>{ui.unmount();ui=create(React.createElement(App))});await act(async()=>ui.root.findByType(Landing).props.onDone());assert.equal(ui.root.findByType(Menu).props.sites.length,3);
+});
+await test('Delete failure preserves list',async()=>{failSave=true;await act(async()=>ui.root.findByType(Menu).props.onDelete(ui.root.findByType(Menu).props.sites[0].id));assert.equal(ui.root.findByType(Menu).props.sites.length,3);failSave=false});
 await test('Deleting all sites persists empty list after restart',async()=>{for(const site of [...ui.root.findByType(Menu).props.sites])await act(async()=>ui.root.findByType(Menu).props.onDelete(site.id));assert.equal(JSON.parse(stored).length,0);await act(async()=>{ui.unmount();ui=create(React.createElement(App))});await act(async()=>ui.root.findByType(Landing).props.onDone());assert.equal(ui.root.findByType(Menu).props.sites.length,0)});
 await test('Storage read failure does not overwrite saved data',async()=>{stored='broken json';await act(async()=>{ui.unmount();ui=create(React.createElement(App))});assert.ok(pill('RETRY'));assert.equal(stored,'broken json');stored='[]';await act(async()=>pill('RETRY').props.onPress());assert.equal(ui.root.findAllByType(Landing).length,1)});
 await act(async()=>ui.unmount());console.log(`\n${count} regression checks passed. Native APIs and server responses were mocked.`);

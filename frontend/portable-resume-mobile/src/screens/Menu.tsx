@@ -1,15 +1,19 @@
-import React, { useState } from 'react';
-import { Alert, FlatList, Modal, Platform, Pressable, Share, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, BackHandler, FlatList, Modal, Platform, Pressable, Share, Text, View } from 'react-native';
 import type { Resume } from '../api';
 import { C, Pill, Screen, T } from '../theme';
 
 export type Site = { id: string; name: string; template: string; url: string; resume?: Resume; theme?: { accent: string; font: string }; isDemo?: boolean };
 
-export default function Menu({ sites, onAdd, onDelete }: { sites: Site[]; onAdd: () => void; onDelete: (id: string) => void }) {
-  const [manage, setManage] = useState(false);
+export default function Menu({ sites, onBack, onAdd, onDelete }: { sites: Site[]; onBack: () => void; onAdd: () => void; onDelete: (id: string) => void }) {
   const [sel, setSel] = useState<Site | null>(null);
 
-  const confirmDelete = (s: Site) => Alert.alert('Delete site?', s.name, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => onDelete(s.id) }]);
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => { onBack(); return true; });
+    return () => sub.remove();
+  }, [onBack]);
+
+  const confirmDelete = (s: Site) => Alert.alert('Delete profile?', `Delete ${s.name} from this device? This cannot be undone.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => onDelete(s.id) }]);
   const share = async () => {
     const site = sel;
     setSel(null);
@@ -27,22 +31,27 @@ export default function Menu({ sites, onAdd, onDelete }: { sites: Site[]; onAdd:
 
   return (
     <Screen>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={[T.h1, { fontSize: 26 }]}>MY PORTFOLIOS</Text>
-        {sites.length > 0 && <Pill label={manage ? 'DONE' : 'MANAGE'} onPress={() => setManage(!manage)} style={{ paddingHorizontal: 16, minHeight: 36, paddingVertical: 8 }} />}
+      <View style={{ alignItems: 'flex-start', marginBottom: 12 }}>
+        <Pill label="← BACK" color="#33445F" onPress={onBack} style={{ paddingHorizontal: 18 }} />
       </View>
+      <Text style={[T.h1, { fontSize: 26 }]}>MY PORTFOLIOS</Text>
       <FlatList
         data={sites} keyExtractor={(s) => s.id} contentContainerStyle={{ paddingTop: 22, paddingBottom: 110 }}
         ListEmptyComponent={<Text style={[T.mono, { textAlign: 'center', marginTop: 60 }]}>No sites yet. Tap + to add one.</Text>}
         renderItem={({ item }) => (
-          <View style={[T.card, { flexDirection: 'row', alignItems: 'center' }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 17, fontWeight: '600', color: C.ink }}>{item.name}</Text>
-              <Text style={{ color: '#6C86AC', marginTop: 3 }}>{item.template} · {item.isDemo ? 'Local draft' : item.url}</Text>
+          <View style={T.card}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ fontSize: 17, fontWeight: '600', color: C.ink }}>{item.name}</Text>
+                <Text style={{ color: '#6C86AC', marginTop: 3 }}>{item.template} · {item.isDemo ? 'Local draft' : item.url}</Text>
+              </View>
+              <Pressable accessibilityRole="button" accessibilityLabel={`More options for ${item.name}`} onPress={() => setSel(item)} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: C.ink, fontSize: 26, fontWeight: '700' }}>⋯</Text>
+              </Pressable>
             </View>
-            {manage
-              ? <Pressable onPress={() => confirmDelete(item)} hitSlop={12}><Text style={{ color: C.red, fontSize: 22 }}>✕</Text></Pressable>
-              : <Pressable onPress={() => setSel(item)} hitSlop={12}><Text style={{ color: C.ink, fontSize: 26, fontWeight: '700' }}>⋯</Text></Pressable>}
+            <Pressable accessibilityRole="button" accessibilityLabel={`Delete profile ${item.name}`} onPress={() => confirmDelete(item)} style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, marginTop: 10, borderRadius: 10, backgroundColor: '#FFF0F0' }}>
+              <Text style={{ color: '#B42318', fontWeight: '600' }}>Delete profile</Text>
+            </Pressable>
           </View>
         )}
       />
