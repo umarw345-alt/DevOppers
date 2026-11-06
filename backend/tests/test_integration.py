@@ -4,6 +4,11 @@ from http.cookiejar import CookieJar
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPCookieProcessor, Request, build_opener
 from uuid import uuid4
+from dotenv import load_dotenv
+
+
+import psycopg
+import jwt
 
 import pytest
 
@@ -52,6 +57,20 @@ def web_headers(csrf_token=None):
     return headers
 
 
+def age_session(session_id):
+    load_dotenv()
+    database_url = os.getenv("AUTH_INTEGRATION_DATABASE_URL")
+    if not database_url:
+        pytest.fail("AUTH_INTEGRATION_DATABASE_URL is required for AFK integration tests")
+    with psycopg.connect(database_url) as connection:
+        connection.execute(
+            """
+            UPDATE sessions
+            SET last_activity_at = NOW() - INTERVAL '31 minutes'
+            WHERE id = %s
+            """,
+            (session_id,),
+        )
 
 def cookie_value(jar, name):
     return next((cookie.value for cookie in jar if cookie.name == name), None)
@@ -271,3 +290,74 @@ def test_incorrect_credentials_fail_login():
 
     assert logout_status == 200
     assert logout_body == {"status": "ok"}
+    
+def test_afk_timeout():
+    opener, jar = make_opener()
+    account = credentials()
+    
+    register_status, register_body = send(
+        opener,
+        "/v1/auth/register",
+        payload=account,
+        headers=web_headers()
+    )
+    assert register_status == 201
+    assert register_body["user"]["email"] == account["email"]
+    assert cookie_value(jar, "auth_access_token")
+    assert cookie_value(jar, "auth_refresh_token")
+    csrf_token = cookie_value(jar, "auth_csrf_token")
+    assert csrf_token
+    
+    access_token = cookie_value(jar, "auth_access_token")
+    assert access_token
+    
+    claims = jwt.decode(
+        access_token,
+        options={"verify_signature": False},
+    )
+    
+    session_id = claims["sid"]
+    
+    age_session(session_id)
+    
+    refresh_status, refresh_body = send(
+        opener,
+        "/v1/auth/refresh",
+        headers=web_headers(csrf_token)
+    )
+    
+    assert refresh_status == 401
+    assert refresh_body["detail"] == "Session expired"
+    
+    logout_status, logout_body = send(
+        opener,
+        "/v1/auth/logout",
+        headers=web_headers(csrf_token)
+    )
+    
+    assert logout_status == 401
+    assert logout_body["detail"] == "Unauthorized"
+
+@pytest.mark.parametrize(
+    "malformed_token",
+    [
+        pytest.param("not-a-jwt", id="missing-jwt-sections"),
+        pytest.param("header.payload", id="missing-signature"),
+        pytest.param("header.invalid_payload.signature", id="invalid-payload"),
+    ],
+)
+
+def test_malformed_access_jwt_is_rejected(malformed_token):
+    opener, _ = make_opener()
+
+    status, body = send(
+        opener,
+        "/v1/auth/input",
+        headers={
+            **native_headers(),
+            "Authorization": f"Bearer {malformed_token}",
+        },
+    )
+
+    assert status == 401
+    assert body["detail"] == "Unauthorized"
