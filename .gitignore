@@ -97,3 +97,5 @@ web-build/
 # Local progress notes
 TODAY_PROGRESS.local.md
 CODE_REVIEW.local.md
+
+/my-app/
