@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101a2d" />
+    <title>Portable Resume — DevOppers</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./theme-overrides.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#top" aria-label="Portable Resume home">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span>portable<span class="brand-dot">.</span></span>
+        </a>
+
+        <div class="workspace-label">WORKSPACE</div>
+        <nav class="side-nav" aria-label="Primary navigation">
+          <a class="nav-link active" href="#builder"><span class="nav-icon">✦</span> Resume builder</a>
+          <a class="nav-link" href="#card"><span class="nav-icon">▣</span> Digital card</a>
+          <a class="nav-link" href="#portfolio"><span class="nav-icon">↗</span> Portfolio preview</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="fair-card">
+            <div class="fair-kicker"><span class="pulse-dot"></span> SJSU CAREER FAIR</div>
+            <p>Make your first impression one scan away.</p>
+            <span class="fair-date">OCT 29 · 10:00 AM</span>
+          </div>
+          <button class="help-link" type="button"><span>?</span> Need help?</button>
+          <div class="profile-mini"><div class="avatar">JL</div><div><strong>Jordan Lee</strong><small>Student account</small></div><span class="more">•••</span></div>
+        </div>
+      </aside>
+
+      <main class="main" id="top">
+        <header class="topbar">
+          <button class="mobile-menu" type="button" aria-label="Open menu">☰</button>
+          <div class="breadcrumb"><span>Workspace</span><b>/</b><strong>Resume builder</strong></div>
+          <div class="top-actions"><span class="save-status"><span class="saved-check">✓</span> All changes saved</span><button class="icon-button" aria-label="Notifications">♧<i></i></button></div>
+        </header>
+
+        <div class="page-content" id="builder">
+          <section class="page-heading">
+            <div><p class="eyebrow">YOUR DIGITAL INTRODUCTION</p><h1>Build your portable resume<span class="heading-dot">.</span></h1><p class="lede">Upload once. Share everywhere. Turn a quick scan into your next opportunity.</p></div>
+            <div class="completion"><div class="completion-ring"><strong id="completionValue">40</strong><span>%</span></div><div><strong>Profile setup</strong><small>2 of 5 steps complete</small></div></div>
+          </section>
+
+          <div class="stepper" aria-label="Resume setup progress">
+            <div class="step active"><span>01</span><div><strong>Upload</strong><small>Resume + photo</small></div></div><div class="step-line"></div>
+            <div class="step"><span>02</span><div><strong>Review</strong><small>Check your details</small></div></div><div class="step-line"></div>
+            <div class="step"><span>03</span><div><strong>Customize</strong><small>Make it yours</small></div></div><div class="step-line"></div>
+            <div class="step"><span>04</span><div><strong>Share</strong><small>Get your pass</small></div></div>
+          </div>
+
+          <section class="workspace-grid">
+            <div class="builder-column">
+              <div class="section-label"><span>01</span><div><h2>Start with your resume</h2><p>We’ll scan your document and structure it into your profile.</p></div></div>
+              <div class="upload-card" id="resumeDropzone" tabindex="0">
+                <div class="upload-icon">↑</div><div class="upload-copy"><strong>Drop your resume here</strong><span>or <button class="text-button" id="resumeBrowse" type="button">browse files</button></span><small>PDF, DOCX, JPG or PNG · up to 10 MB</small></div><div class="file-chip hidden" id="resumeFile"><span class="file-type">PDF</span><span><strong>Jordan-Lee-Resume.pdf</strong><small>2.4 MB · ready to scan</small></span><button type="button" class="remove-file" aria-label="Remove resume">×</button></div><input type="file" id="resumeInput" accept=".pdf,.docx,.jpg,.jpeg,.png" hidden /></div>
+
+              <div class="section-label photo-label"><span>02</span><div><h2>Add a profile photo <em>optional</em></h2><p>A friendly face helps people remember you.</p></div></div>
+              <div class="photo-upload" id="photoDropzone" tabindex="0"><div class="photo-placeholder" id="photoPlaceholder">+</div><div><strong>Upload a professional headshot</strong><span>JPG or PNG · square crop recommended</span></div><button class="outline-button" id="photoBrowse" type="button">Choose photo</button><input type="file" id="photoInput" accept=".jpg,.jpeg,.png" hidden /></div>
+
+              <div class="privacy-note"><span>⌁</span><p><strong>Your information stays yours.</strong> Your resume is encrypted in transit and you choose what appears on your public portfolio.</p></div>
+
+              <div class="review-panel hidden" id="reviewPanel"><div class="review-heading"><div><p class="eyebrow">SCAN COMPLETE</p><h2>We found your story.</h2></div><span class="success-badge">✓ Ready to review</span></div><div class="parsed-grid"><div><small>NAME</small><strong>Jordan Lee</strong></div><div><small>ROLE</small><strong>UX Designer</strong></div><div><small>EDUCATION</small><strong>SJSU · Design</strong></div><div><small>SKILLS FOUND</small><strong>12 skills</strong></div></div><button class="primary-button full" id="continueButton" type="button">Continue to customize <span>→</span></button></div>
+            </div>
+
+            <aside class="preview-column" id="card">
+              <div class="preview-header"><div><p class="eyebrow">LIVE PREVIEW</p><h2>Your digital card</h2></div><button class="preview-switch active" type="button">Card</button><button class="preview-switch" id="portfolioSwitch" type="button">Portfolio</button></div>
+              <div class="card-preview-wrap" id="cardPreviewWrap"><div class="wallet-card" id="walletCard"><div class="card-top"><span class="portable-mini">portable<span>.</span></span><span class="pass-label">STUDENT PASS</span></div><div class="card-person"><div class="card-avatar" id="cardAvatar">JL</div><div><h3>Jordan Lee</h3><p>UX Designer · Class of 2027</p></div></div><div class="qr-area"><div class="qr-code" aria-label="Decorative QR code"></div><div><small>SCAN TO VIEW</small><strong>jordanlee.dev/portfolio</strong></div></div><div class="card-footer"><span>SJSU · San José State University</span><span>↗</span></div></div><div class="card-shadow"></div></div>
+              <div class="portfolio-preview hidden" id="portfolioPreview"><div class="portfolio-browser"><div class="browser-top"><span></span><span></span><span></span><small>jordanlee.dev</small></div><div class="portfolio-hero"><div class="portfolio-avatar">JL</div><p>PRODUCT DESIGNER · SAN JOSE, CA</p><h3>Designing digital<br /><i>experiences with care.</i></h3><div class="portfolio-links"><span>Work ↗</span><span>About ↗</span><span>Contact ↗</span></div></div><div class="portfolio-foot"><span>Selected work</span><span>01 — 03</span></div></div></div>
+              <div class="preview-caption"><span class="caption-dot"></span><span id="captionText">This is what recruiters see when they scan your pass.</span></div>
+
+              <div class="customize-panel"><div class="customize-head"><div><p class="eyebrow">MAKE IT YOURS</p><h2>Card appearance</h2></div><button class="chevron" type="button">⌃</button></div><div class="theme-options" role="group" aria-label="Choose card theme"><button class="theme-swatch theme-navy active" data-theme="navy" aria-label="Navy theme"></button><button class="theme-swatch theme-coral" data-theme="coral" aria-label="Coral theme"></button><button class="theme-swatch theme-lime" data-theme="lime" aria-label="Lime theme"></button><button class="theme-swatch theme-paper" data-theme="paper" aria-label="Paper theme"></button><span class="theme-name" id="themeName">Midnight navy</span></div><div class="field-toggles"><label><span>Show email on portfolio</span><input type="checkbox" checked /><i></i></label><label><span>Show phone number</span><input type="checkbox" /><i></i></label><label><span>Show graduation year</span><input type="checkbox" checked /><i></i></label></div></div>
+            </aside>
+          </section>
+
+          <section class="next-step hidden" id="sharePanel"><div><p class="eyebrow">NEXT UP</p><h2>Your card is ready to share.</h2><p>Add it to your wallet before the career fair, then let your QR code do the talking.</p></div><div class="share-actions"><button class="wallet-button apple" type="button"><span>●</span> Add to Apple Wallet</button><button class="wallet-button google" type="button"><span>＋</span> Save to Google Wallet</button><button class="copy-button" id="copyLink" type="button">Copy portfolio link <span>↗</span></button></div></section>
+          <footer><span>PORTABLE RESUME · DEVOPPERS</span><span>Built for the next conversation.</span></footer>
+        </div>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>
