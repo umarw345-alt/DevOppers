@@ -20,7 +20,7 @@ if os.getenv("RUN_INTEGRATION_TESTS") != "1":
     )
 
 
-BASE_URL = os.getenv("AUTH_INTEGRATION_BASE_URL", "http://localhost:8080")
+BASE_URL = os.getenv("AUTH_INTEGRATION_BASE_URL", "http://localhost:8000")
 
 
 def make_opener():
