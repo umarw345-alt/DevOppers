@@ -3,7 +3,7 @@ declare const process: any;
 
 // Android emulator reaches your computer at 10.0.2.2. On a real phone set the EXPO_PUBLIC_* vars to your computer's LAN IP.
 const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
-const API = process.env.EXPO_PUBLIC_API_URL?.replace(/\/+$/, '') || `http://${HOST}:8000`; // FastAPI backend
+const API = process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/+$/, '') || `http://${HOST}:8000`; // FastAPI backend
 export const USE_SAMPLE_DATA = true; // resume scan is still a stub on the backend; set false when /resume/upload works
 
 export type Entry = { organization: string; title: string; start: string; end: string; bullets: string };
