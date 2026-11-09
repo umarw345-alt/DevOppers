@@ -4,13 +4,13 @@
 
 This project provides email-based registration and login for a React Native
 application. The mobile client never connects directly to PostgreSQL. Requests
-pass through KrakenD to the FastAPI authentication service, which owns identity,
-password, session, and token operations.
+go to the FastAPI backend (`backend/main.py`), whose authentication routes own
+identity, password, session, and token operations. The same app also serves the
+portfolio routes.
 
 The system is organized like a building:
 
 - React Native is the front desk where a person submits a request.
-- KrakenD is the reception desk that directs traffic to the correct office.
 - FastAPI is the identity office that checks credentials and issues documents.
 - PostgreSQL is the locked records room.
 - Docker Compose is the building manager that starts the offices in order.
@@ -23,16 +23,16 @@ React Native / Expo client
         |
         | HTTPS JSON requests
         v
-KrakenD gateway :8080
-        |
-        | internal Docker network
-        v
-FastAPI authentication service :5000
+FastAPI backend :8000 (auth + portfolio routes)
         |
         | SQLAlchemy connection pool and transactions
         v
-PostgreSQL :5432
+PostgreSQL :5432 (published on 127.0.0.1 only)
 ```
+
+PostgreSQL's port is bound to `127.0.0.1`, so only the machine running it can
+connect; other devices on the same network cannot reach the database. Only
+FastAPI holds the database credentials and JWT keys.
 
 The client receives only access and refresh tokens. Database credentials,
 Argon2id configuration, JWT keys, and PostgreSQL details remain server-side.
@@ -48,18 +48,10 @@ device-protected storage. AsyncStorage is not used for credentials or tokens.
 Analogy: Secure Store is a locked wallet on the user’s device. The app can use
 what is inside, but it does not leave the wallet on a public desk.
 
-### KrakenD
+### FastAPI authentication routes
 
-KrakenD is the public API gateway. It owns the client-facing HTTP boundary and
-forwards approved routes to FastAPI. It does not connect to PostgreSQL and does
-not receive database credentials.
-
-Analogy: KrakenD is a receptionist. It knows which office to call, but it does
-not enter the records room or handle the records itself.
-
-### FastAPI authentication service
-
-FastAPI owns authentication behavior:
+FastAPI is the public HTTP boundary and handles CORS itself. Its
+authentication routes (`backend/auth_service/`) own authentication behavior:
 
 - validates request shape and email/password input
 - hashes and verifies passwords with Argon2id
@@ -126,11 +118,11 @@ Docker Compose runs:
 
 - PostgreSQL
 - the Alembic migration job
-- the FastAPI authentication service
-- KrakenD
+- the FastAPI backend (`api`)
 
 The migration job depends on PostgreSQL health. FastAPI depends on successful
-migrations. KrakenD depends on FastAPI.
+migrations. During development FastAPI can also run outside Docker with
+`uv run fastapi dev main.py`.
 
 ## Authentication lifecycle
 
@@ -229,4 +221,4 @@ The project should verify:
 - login rate limiting
 - absence of passwords, hashes, tokens, and secrets in logs
 - Alembic upgrade and downgrade behavior
-- KrakenD-to-FastAPI health routing
+- FastAPI health routing

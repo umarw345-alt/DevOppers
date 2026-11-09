@@ -13,9 +13,7 @@ The project scope is as follows:
 React Native Client - holds signed JWT tokens and raw refresh tokens in Secure Storage
     ↓ POST auth/login
     ↓ POST auth/register
-KrakenD
-    ↓ forwards HTTPS POST request
-FastAPI Authentication Service
+FastAPI backend (backend/main.py, port 8000) - auth routes + portfolio routes in one app
     ├─ validates username/password
     ├─ hashes password with Argon2id
     ├─ sends parameterized INSERT query
@@ -25,7 +23,7 @@ PostgreSQL - stores username, password_hash, hashed refresh tokens, user metadat
 
 ### Project flow:
 
-The React Native client inputs text field to either register or login with username and password, sends a POST request through the KrakenD backend proxy to the FastAPI authentication service, which FastAPI uses to authenticate the request. The client should never directly access the authorization service. Both the client and KrakenD should never see database details; that is FastAPI's job. The FastAPI authentication service uses parameterized SQL queries and transactions for reads and writes. Only the access JWT and raw refresh tokens are returned to the client, PostgreSQL only stores the refresh-token hash.
+The React Native client inputs text field to either register or login with username and password, sends a POST request to the FastAPI backend, which authenticates the request. The client should never see database details; that is FastAPI's job. PostgreSQL is published on 127.0.0.1 only, so no other device can reach it. The FastAPI authentication service uses parameterized SQL queries and transactions for reads and writes. Only the access JWT and raw refresh tokens are returned to the client, PostgreSQL only stores the refresh-token hash.
 
 Refresh tokens should be refreshed, invalidating the previous one when the old one is used for a new access token. The new refresh token is issued, fighting against theft and silent token replay.
 
@@ -79,9 +77,9 @@ Authentication service is responsible for generating and signing the token, whic
 
 ### Docker
 
-Docker compose runs PostgreSQL, the FastAPI authentication service, and KrakenD. FastAPI receives the database and authentication configuration through environment variables. PostgreSQL credentials, JWT signing secrets, and gateway credentials must come from ignored `.env` files or deployment secret storage.
+Docker compose runs PostgreSQL, the Alembic migration job, and the FastAPI backend (`api`). FastAPI can also run outside Docker with `uv run fastapi dev main.py` from `backend/`, reading the root `.env`. The Python backend uses uv only (`backend/pyproject.toml`); there are no requirements.txt files. FastAPI receives the database and authentication configuration through environment variables. PostgreSQL credentials and JWT signing secrets must come from ignored `.env` files or deployment secret storage.
 
-KrakenD configuration may be stored when it contains no secrets. Database migrations run against PostgreSQL container before the authentication service is used. Argon2id parameters are configurable through environment variables, but the service must provide safe defaults and never log passwords, hashes, tokens, or secret values.
+Database migrations run against PostgreSQL container before the authentication service is used. Argon2id parameters are configurable through environment variables, but the service must provide safe defaults and never log passwords, hashes, tokens, or secret values.
 
 The FastAPI service configuration stores the non-secret defaults but Docker environment variables override them.
 
@@ -93,7 +91,6 @@ ARGON2_SALT_LENGTH
 
 To start, Docker Desktop is required to be installed and opened and a series of startup scripts from .\scripts folder will provide optional startup helpers. It should contain startup scripts runnable in the terminal. The folder is created but no files yet are to be created or implemented, only planned for now.
 
-.\scripts\start-krakend.ps1
 .\scripts\start-fastapi.ps1
 .\scripts\start-postgres.ps1
 
