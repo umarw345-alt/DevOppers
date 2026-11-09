@@ -1,8 +1,8 @@
 from pathlib import Path
 from uuid import uuid4
 
-from backend.auth_service.config import Settings
-from backend.auth_service.security import (
+from auth_service.config import Settings
+from auth_service.security import (
     build_password_hasher,
     hash_refresh_token,
     new_refresh_token,

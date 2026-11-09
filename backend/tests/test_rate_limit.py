@@ -1,4 +1,4 @@
-from backend.auth_service.rate_limit import LoginRateLimiter
+from auth_service.rate_limit import LoginRateLimiter
 
 
 def test_rate_limiter_allows_only_configured_attempts():

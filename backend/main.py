@@ -1,46 +1,57 @@
-"""Portable Resume backend API."""
+"""Portable Resume backend API: authentication plus portfolio generation."""
 
-from fastapi import FastAPI, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
+from pathlib import Path
 
-from portfolio.generator import inline_css, render
-from portfolio.schema import Resume, Theme
-from portfolio.themes import FONTS, TEMPLATES, TemplateId, ThemeError
+from dotenv import load_dotenv
 
-app = FastAPI(title="Portable Resume API", version="0.1.0")
+# Lets `uv run fastapi dev main.py` pick up the repo's .env. Variables that are
+# already set (e.g. by Docker) win, and a missing file is ignored.
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+from fastapi import FastAPI, HTTPException, UploadFile  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.responses import HTMLResponse  # noqa: E402
+from pydantic import BaseModel  # noqa: E402
+
+from auth_service.config import load_settings  # noqa: E402
+from auth_service.db import create_session_factory  # noqa: E402
+from auth_service.fastapi_routes import router as auth_router  # noqa: E402
+from auth_service.rate_limit import LoginRateLimiter  # noqa: E402
+from portfolio.generator import inline_css, render  # noqa: E402
+from portfolio.schema import Resume, Theme  # noqa: E402
+from portfolio.themes import FONTS, TEMPLATES, TemplateId, ThemeError  # noqa: E402
+
+
+def create_app() -> FastAPI:
+    app = FastAPI(title="Portable Resume API", version="0.1.0")
+    settings = load_settings()
+    engine, session_factory = create_session_factory(settings.database_url)
+    app.state.settings = settings
+    app.state.db_engine = engine
+    app.state.db_session_factory = session_factory
+    app.state.login_rate_limiter = LoginRateLimiter(
+        settings.login_rate_limit, settings.login_rate_window_seconds
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(settings.cors_allowed_origins),
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "Accept", "X-Client-Platform", "X-CSRF-Token"],
+    )
+    # /health and /v1/auth/* (register, login, refresh, logout, input).
+    # Use auth_service.fastapi_routes.access_identity to require a login on other routes.
+    app.include_router(auth_router, tags=["auth"])
+    return app
+
+
+app = create_app()
 
 
 class PreviewRequest(BaseModel):
     resume: Resume
     template_id: TemplateId
     theme: Theme | None = None
-
-
-# Health
-
-@app.get("/health", tags=["health"])
-def health():
-    """Simple liveness check."""
-    return {"status": "ok"}
-
-
-# Auth (FR1) - register, login, logout. Login returns a signed JWT.
-
-
-@app.post("/auth/register", tags=["auth"])
-def register():
-    """Create an account (username, email, password). Hash password with bcrypt."""
-
-
-@app.post("/auth/login", tags=["auth"])
-def login():
-    """Verify credentials and return a signed JWT session token."""
-
-
-@app.post("/auth/logout", tags=["auth"])
-def logout():
-    """Invalidate the current session token."""
 
 
 # User profile

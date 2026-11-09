@@ -1,7 +1,14 @@
 import json
+import os
 from pathlib import Path
 
 import pytest
+
+# main.py reads these at import. The database engine connects lazily, so unit
+# tests never touch Postgres; integration tests run against the real stack.
+os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://test:test@localhost:5432/test")
+os.environ.setdefault("JWT_PRIVATE_KEY_PATH", "unused-private.pem")
+os.environ.setdefault("JWT_PUBLIC_KEY_PATH", "unused-public.pem")
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
