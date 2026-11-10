@@ -1,0 +1,77 @@
+{
+  "contact": {
+    "name": "Maya Patel",
+    "headline": "Software Engineering Student",
+    "email": "maya.patel@example.com",
+    "phone": "(408) 555-0142",
+    "location": "San Jose, CA",
+    "links": [
+      {
+        "label": "GitHub",
+        "url": "https://github.com/mayapatel-dev"
+      }
+    ]
+  },
+  "summary": "Computer engineering student who enjoys building reliable backend services and developer tools.",
+  "education": [
+    {
+      "organization": "San José State University",
+      "title": "B.S. Computer Engineering",
+      "location": "San Jose, CA",
+      "start": "2022-08",
+      "end": "2026-05",
+      "bullets": [
+        "GPA 3.7, Dean's List (4 semesters)"
+      ]
+    }
+  ],
+  "experience": [
+    {
+      "organization": "Brightline Robotics",
+      "title": "Software Engineering Intern",
+      "location": "Fremont, CA",
+      "start": "2025-06",
+      "end": "2025-08",
+      "bullets": [
+        "Built a FastAPI service that streams telemetry from 40 warehouse robots",
+        "Cut dashboard load time from 6s to 1.2s by adding Redis caching"
+      ]
+    },
+    {
+      "organization": "SJSU College of Engineering",
+      "title": "Peer Tutor",
+      "location": "San Jose, CA",
+      "start": "2023-09",
+      "end": null,
+      "bullets": [
+        "Tutor 15 students per week in data structures and C programming"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "StudySync",
+      "description": "Real-time study group scheduler",
+      "url": "https://github.com/mayapatel-dev/studysync",
+      "bullets": [
+        "React Native app with 300+ active users on campus"
+      ]
+    },
+    {
+      "name": "Tiny Compiler",
+      "description": "A compiler for a C subset written in Rust",
+      "url": null,
+      "bullets": []
+    }
+  ],
+  "skills": [
+    "Python",
+    "Rust",
+    "TypeScript",
+    "FastAPI",
+    "PostgreSQL",
+    "Docker",
+    "Git"
+  ],
+  "hidden_fields": []
+}

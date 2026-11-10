@@ -1,0 +1,105 @@
+{
+  "contact": {
+    "name": "Priya Nair",
+    "headline": "Senior Product Manager",
+    "email": "priya.nair.pm@example.com",
+    "phone": "(650) 555-0177",
+    "location": "Palo Alto, CA",
+    "links": [
+      {
+        "label": "LinkedIn",
+        "url": "https://linkedin.com/in/priyanair"
+      }
+    ]
+  },
+  "summary": "Product manager with eleven years of experience shipping B2B analytics and payments products from zero to scale.",
+  "education": [
+    {
+      "organization": "University of Michigan, Ross School of Business",
+      "title": "MBA",
+      "location": null,
+      "start": "2014-09",
+      "end": "2016-05",
+      "bullets": []
+    },
+    {
+      "organization": "University of Washington",
+      "title": "B.S. Informatics",
+      "location": null,
+      "start": "2008-09",
+      "end": "2012-06",
+      "bullets": []
+    }
+  ],
+  "experience": [
+    {
+      "organization": "Ledgerline",
+      "title": "Senior Product Manager, Payments",
+      "location": "Palo Alto, CA",
+      "start": "2021-04",
+      "end": null,
+      "bullets": [
+        "Own the payouts roadmap for a product moving $2B per year",
+        "Launched instant payouts in 14 countries with a team of 22 engineers",
+        "Reduced failed payouts by 37% by redesigning bank verification",
+        "Set quarterly OKRs with engineering, risk, and finance leads"
+      ]
+    },
+    {
+      "organization": "Metricly",
+      "title": "Product Manager",
+      "location": "Seattle, WA",
+      "start": "2018-01",
+      "end": "2021-03",
+      "bullets": [
+        "Shipped self-serve dashboards that became 40% of new revenue",
+        "Ran 60+ customer interviews to shape the alerting product",
+        "Introduced a beta program that shortened feedback cycles to one week"
+      ]
+    },
+    {
+      "organization": "Metricly",
+      "title": "Associate Product Manager",
+      "location": "Seattle, WA",
+      "start": "2016-06",
+      "end": "2017-12",
+      "bullets": [
+        "Managed the data connectors backlog across 9 integrations",
+        "Wrote specs for the first public API"
+      ]
+    },
+    {
+      "organization": "Northwind Consulting",
+      "title": "Business Analyst",
+      "location": "Chicago, IL",
+      "start": "2012-07",
+      "end": "2014-08",
+      "bullets": [
+        "Built forecasting models for retail clients in Excel and SQL",
+        "Presented findings to client executives every quarter"
+      ]
+    },
+    {
+      "organization": "Seattle Public Library",
+      "title": "Volunteer Tech Mentor",
+      "location": "Seattle, WA",
+      "start": "2010-01",
+      "end": "2012-06",
+      "bullets": [
+        "Taught weekly computer basics classes for adults"
+      ]
+    }
+  ],
+  "projects": [],
+  "skills": [
+    "Product strategy",
+    "SQL",
+    "A/B testing",
+    "Roadmapping",
+    "Payments",
+    "Stakeholder management",
+    "Jira",
+    "Amplitude"
+  ],
+  "hidden_fields": []
+}

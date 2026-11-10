@@ -1,0 +1,63 @@
+{
+  "contact": {
+    "name": "Kevin Osei",
+    "headline": "Mechanical Engineer",
+    "email": "kevin.osei@example.com",
+    "phone": "(510) 555-0123",
+    "location": "Hayward, CA",
+    "links": []
+  },
+  "summary": "Recent mechanical engineering graduate focused on product design and manufacturing.",
+  "education": [
+    {
+      "organization": "California State University, East Bay",
+      "title": "B.S. Mechanical Engineering",
+      "location": null,
+      "start": "2020-08",
+      "end": "2024-05",
+      "bullets": []
+    }
+  ],
+  "experience": [
+    {
+      "organization": "Pacific Fabrication Inc.",
+      "title": "Manufacturing Engineer I",
+      "location": "Hayward, CA",
+      "start": "2024-07",
+      "end": null,
+      "bullets": [
+        "Designed fixtures in SolidWorks that cut assembly time by 18%",
+        "Maintain work instructions for 30 machined parts"
+      ]
+    },
+    {
+      "organization": "Habitat for Humanity",
+      "title": "Construction Volunteer",
+      "location": "Oakland, CA",
+      "start": "2021-01",
+      "end": "2023-12",
+      "bullets": [
+        "Framed and roofed 6 homes with volunteer crews"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Formula SAE Suspension",
+      "description": "Designed the rear suspension for the university race car",
+      "url": null,
+      "bullets": [
+        "Reduced unsprung mass by 2.3 kg"
+      ]
+    }
+  ],
+  "skills": [
+    "SolidWorks",
+    "AutoCAD",
+    "GD&T",
+    "MATLAB",
+    "CNC machining",
+    "FEA"
+  ],
+  "hidden_fields": []
+}
