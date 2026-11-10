@@ -118,10 +118,9 @@ export async function getTemplates(): Promise<Tpl[]> {
 }
 
 export async function previewHtml(resume: Resume, template_id: string, theme: { accent?: string; font?: string }): Promise<string> {
-  const previewTheme = {
-    ...theme,
-    accent: theme.accent ?? DEFAULT_TPLS.find((t) => t.id === template_id)?.accent,
-  };
+  // No accent picked ("DEFAULT") -> let the backend use the template's own accent.
+  // The tile colors in DEFAULT_TPLS are for the picker only; e.g. dark's gray tile is unreadable as an accent on the dark template.
+  const previewTheme = theme.accent ? theme : { ...theme, accent: undefined };
   return request(`${API}/portfolio/preview`, {
     method: 'POST', headers: json, body: JSON.stringify({ resume: toApi(resume), template_id, theme: previewTheme }),
   }, async (res) => {
