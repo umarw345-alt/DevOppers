@@ -14,8 +14,6 @@ DEFAULT_MODEL = "claude-haiku-5-5"
 # on evals/resume_extraction, a bit faster.
 DEFAULT_EFFORT = "medium"
 
-SUPPORTED_TYPES = {"application/pdf", "image/jpeg", "image/png"}
-
 SYSTEM_PROMPT = """\
 You read a resume and fill in JSON for a personal portfolio website. The person will \
 review and edit the result before it is published, so accuracy matters more than \
