@@ -12,7 +12,7 @@ type Screen = 'login' | 'register';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('login');
-  const { status, isLoading, error, login, register, logout, recordInput, clearError } = useAuth();
+  const { status, isLoading, error, accessToken, login, register, logout, recordInput, clearError } = useAuth();
 
   const content = status === 'loading' ? (
     <View style={[authStyles.screen, authStyles.content]}>
@@ -20,7 +20,7 @@ function App() {
       <Text style={authStyles.slogan}>Restoring your session…</Text>
     </View>
   ) : status === 'signed_in' ? (
-    <PortfolioHomeScreen onInput={recordInput} onLogout={logout} />
+    <PortfolioHomeScreen accessToken={accessToken} onInput={recordInput} onLogout={logout} />
   ) : screen === 'register' ? (
     <RegisterScreen
       error={error ?? undefined}

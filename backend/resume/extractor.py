@@ -72,8 +72,9 @@ def extract_resume(
     Model and effort default to ANTHROPIC_MODEL / ANTHROPIC_EFFORT, then to Haiku 5.5 at medium effort.
     """
     client = client or anthropic.Anthropic()
-    model = model or os.getenv("ANTHROPIC_MODEL", DEFAULT_MODEL)
-    effort = effort or os.getenv("ANTHROPIC_EFFORT", DEFAULT_EFFORT)
+    # `or` rather than a getenv default: Docker passes unset variables as empty strings.
+    model = model or os.getenv("ANTHROPIC_MODEL") or DEFAULT_MODEL
+    effort = effort or os.getenv("ANTHROPIC_EFFORT") or DEFAULT_EFFORT
 
     try:
         response = client.messages.parse(

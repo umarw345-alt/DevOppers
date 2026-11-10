@@ -1,8 +1,12 @@
 """Portable Resume backend API: authentication plus portfolio generation."""
 
+import logging
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+# Uvicorn only configures its own loggers; this lets app messages (e.g. per-upload token counts) show up.
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s - %(message)s")
 
 # Lets `uv run fastapi dev main.py` pick up the repo's .env. Variables that are
 # already set (e.g. by Docker) win, and a missing file is ignored.
@@ -20,6 +24,7 @@ from auth_service.rate_limit import LoginRateLimiter  # noqa: E402
 from portfolio.generator import inline_css, render  # noqa: E402
 from portfolio.schema import Resume, Theme  # noqa: E402
 from portfolio.themes import FONTS, TEMPLATES, TemplateId, ThemeError  # noqa: E402
+from resume.routes import router as resume_router  # noqa: E402
 
 
 def create_app() -> FastAPI:
@@ -42,6 +47,9 @@ def create_app() -> FastAPI:
     # /health and /v1/auth/* (register, login, refresh, logout, input).
     # Use auth_service.fastapi_routes.access_identity to require a login on other routes.
     app.include_router(auth_router, tags=["auth"])
+    # Each upload is a paid Claude call, so cap it per user: 10 uploads per 10 minutes.
+    app.state.upload_rate_limiter = LoginRateLimiter(10, 600)
+    app.include_router(resume_router)
     return app
 
 
@@ -72,13 +80,7 @@ def upload_profile_photo(file: UploadFile):
     """Upload or replace the user's ID/profile photo."""
 
 
-# Resume ingestion (FR2) - upload PDF/JPEG, run OCR pipeline, return JSON
-
-
-@app.post("/resume/upload", tags=["resume"])
-def upload_resume(file: UploadFile):
-    """Validate the file (PDF/JPEG, <=10 MB, not encrypted), run the
-    extraction pipeline, and return the parsed resume JSON for review."""
+# Resume ingestion (FR2). POST /resume/upload lives in resume/routes.py.
 
 
 @app.get("/resume", tags=["resume"])
