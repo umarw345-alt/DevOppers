@@ -4,6 +4,7 @@ FastAPI backend for Portable Resume: one app (`main.py`) serving authentication 
 
 - `auth_service/` - register, login, refresh, logout and idle tracking under `/v1/auth/*` (Argon2id, RS256 JWTs, PostgreSQL)
 - `portfolio/` - static portfolio site generator (see below)
+- `resume/` - resume upload: reads a PDF/JPEG/PNG with Claude and returns it as `Resume` JSON (see below)
 - `migrations/` + `alembic.ini` - database schema migrations
 
 ## Setup
@@ -28,7 +29,7 @@ uv run --env-file ../.env alembic upgrade head
 ## Tests
 
 ```bash
-uv run pytest --cov=portfolio --cov=auth_service --cov=main
+uv run pytest --cov=portfolio --cov=auth_service --cov=resume --cov=main
 ```
 
 - `tests/unit/` - single functions and models on their own
@@ -64,3 +65,17 @@ uv run python preview.py [resume.json] [theme.json]
 
 Renders every template into `preview/` (git-ignored) and serves it at http://localhost:8765.
 Restart it to see template changes.
+
+## Resume upload
+
+`POST /resume/upload` (multipart field `file`, login required) reads a PDF, JPEG or PNG resume with Claude and returns `Resume` JSON for the user to review. Nothing is saved. Code: `resume/extractor.py` (the Claude call) and `resume/routes.py` (the endpoint).
+
+- Needs `ANTHROPIC_API_KEY` in the root `.env`; without it the endpoint returns 503.
+- Defaults to `claude-haiku-5-5` at medium effort (about $0.001 per resume). Override with `ANTHROPIC_MODEL` / `ANTHROPIC_EFFORT`.
+- Limits: 10 MB per file, 10 uploads per user per 10 minutes.
+
+`evals/resume_extraction/` compares models on synthetic resumes with known answers (costs real money; Haiku is about $0.01 a run):
+
+```bash
+uv run --env-file ../.env python -m evals.resume_extraction.compare_models --config claude-haiku-5-5:medium
+```

@@ -26,7 +26,7 @@ function Entries({ title, items, onChange }: { title: string; items: Entry[]; on
   );
 }
 
-export default function AddResume({ initialResume, onBack, onContinue }: { initialResume: Resume | null; onBack: (r: Resume | null) => void; onContinue: (r: Resume) => void }) {
+export default function AddResume({ initialResume, accessToken, onBack, onContinue }: { initialResume: Resume | null; accessToken?: string | null; onBack: (r: Resume | null) => void; onContinue: (r: Resume) => void }) {
   const [file, setFile] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -44,12 +44,12 @@ export default function AddResume({ initialResume, onBack, onContinue }: { initi
     if (picking.current) return;
     picking.current = true; setBusy(true); setErr('');
     try {
-      const res = await DocumentPicker.getDocumentAsync({ type: ['application/pdf', 'image/jpeg'], copyToCacheDirectory: true });
+      const res = await DocumentPicker.getDocumentAsync({ type: ['application/pdf', 'image/jpeg', 'image/png'], copyToCacheDirectory: true });
       if (res.canceled || !mounted.current) return;
       const f = res.assets?.[0];
       if (!f) throw new Error('No file was selected. Please try again.');
       if (f.size && f.size > 10 * 1024 * 1024) throw new Error('File is over 10 MB.');
-      const next = await extractResume({ uri: f.uri, name: f.name, mimeType: f.mimeType });
+      const next = await extractResume({ uri: f.uri, name: f.name, mimeType: f.mimeType, file: f.file }, accessToken);
       if (mounted.current) { setR(next); setFile(f.name); }
     } catch (e: unknown) { if (mounted.current) setErr(errorMessage(e)); }
     finally { picking.current = false; if (mounted.current) setBusy(false); }
@@ -60,7 +60,7 @@ export default function AddResume({ initialResume, onBack, onContinue }: { initi
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
         <Text style={[T.h1, { fontSize: 26 }]}>ADD RESUME</Text>
         <Text style={T.h2}>1. UPLOAD YOUR RESUME</Text>
-        <Pill label={`${file || 'CHOOSE PDF OR JPEG'}  📂`} onPress={pick} disabled={busy} />
+        <Pill label={`${file || 'CHOOSE PDF, JPEG OR PNG'}  📂`} onPress={pick} disabled={busy} />
         {busy && <View style={{ alignItems: 'center', marginTop: 20 }}><ActivityIndicator color="#fff" size="large" /><Text style={[T.mono, { marginTop: 8 }]}>Reading your resume…</Text></View>}
         {!!err && <Text style={{ color: '#FFB4B4', marginTop: 10 }}>{err}</Text>}
         {USE_SAMPLE_DATA && <Text style={[T.mono, { marginTop: 12 }]}>Demo: selecting a file loads an example resume. Replace the text with your own details.</Text>}

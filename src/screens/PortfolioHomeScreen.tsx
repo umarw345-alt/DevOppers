@@ -14,9 +14,9 @@ const EXAMPLES: Site[] = [
   { id: '3', name: 'Career Fair Page', template: 'dark', url: '', isDemo: true },
 ];
 
-type PortfolioHomeScreenProps = { onLogout: () => Promise<void>; onInput: () => void };
+type PortfolioHomeScreenProps = { accessToken?: string | null; onLogout: () => Promise<void>; onInput: () => void };
 
-export default function PortfolioHomeScreen({ onLogout, onInput }: PortfolioHomeScreenProps) {
+export default function PortfolioHomeScreen({ accessToken, onLogout, onInput }: PortfolioHomeScreenProps) {
   const [screen, setScreen] = useState<'menu' | 'add' | 'template'>('menu');
   const [sites, setSites] = useState<Site[]>([]);
   const [resume, setResume] = useState<Resume | null>(null);
@@ -61,7 +61,7 @@ export default function PortfolioHomeScreen({ onLogout, onInput }: PortfolioHome
     <Text style={T.h2}>Could not load saved portfolios. Please try again.</Text>
     <Pill label="RETRY" onPress={() => setRetry((n) => n + 1)} />
   </> : <ActivityIndicator color="#fff" size="large" />}</Screen>;
-  if (screen === 'add') return <AddResume initialResume={resume} onBack={(r) => { setResume(r); setScreen('menu'); }} onContinue={(r) => { setResume(r); setScreen('template'); }} />;
+  if (screen === 'add') return <AddResume initialResume={resume} accessToken={accessToken} onBack={(r) => { setResume(r); setScreen('menu'); }} onContinue={(r) => { setResume(r); setScreen('template'); }} />;
   if (screen === 'template' && resume) return <Template resume={resume} onBack={() => setScreen('add')} onDone={async (site) => {
     await updateSites((previous) => [site, ...previous]);
     setResume(null); setScreen('menu');
