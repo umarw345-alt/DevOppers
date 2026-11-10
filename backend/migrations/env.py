@@ -4,8 +4,8 @@ import os
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from backend.auth_service.db import Base
-from backend.auth_service import models  # noqa: F401 - registers model metadata
+from auth_service.db import Base
+from auth_service import models  # noqa: F401 - registers model metadata
 
 config = context.config
 if config.config_file_name is not None:

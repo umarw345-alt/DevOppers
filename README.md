@@ -7,11 +7,9 @@ Allows for users to login or register an account to access the main application.
 ```text
 React Native / Expo
         |
-KrakenD gateway :8080
+FastAPI backend :8000   (auth + portfolio, backend/main.py)
         |
-FastAPI authentication service :5000
-        |
-PostgreSQL :5432
+PostgreSQL :5432        (reachable only from this computer)
 ```
 
 Native clients store raw access and refresh tokens in `expo-secure-store`. The web client does not persist tokens in JavaScript storage: FastAPI sets HttpOnly access and refresh cookies, plus a readable CSRF companion cookie. FastAPI stores Argon2id password hashes and refresh-token hashes in PostgreSQL.
@@ -19,6 +17,7 @@ Native clients store raw access and refresh tokens in `expo-secure-store`. The w
 ## Prerequisites
 
 - Node.js and npm
+- [uv](https://docs.astral.sh/uv/) for the Python backend
 - Docker Desktop with the Linux engine running
 - A modern web browser for the primary web app
 - Android Studio and an Android emulator for optional Android development
@@ -26,37 +25,54 @@ Native clients store raw access and refresh tokens in `expo-secure-store`. The w
 
 ## Start the backend
 
-Create a local environment file from `.env.example` and ensure development RS256 keys exist in the ignored `secrets/` directory:
+Create a local environment file from `.env.example`, then change `POSTGRES_PASSWORD` (and the two database URLs that contain it):
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
+Create development RS256 keys in the ignored `secrets/` directory (one time):
+
+```powershell
+New-Item -ItemType Directory -Force secrets
+cd backend
+uv run python -c "from cryptography.hazmat.primitives.asymmetric import rsa; from cryptography.hazmat.primitives import serialization as s; k = rsa.generate_private_key(public_exponent=65537, key_size=2048); open('../secrets/jwt-private.pem','wb').write(k.private_bytes(s.Encoding.PEM, s.PrivateFormat.PKCS8, s.NoEncryption())); open('../secrets/jwt-public.pem','wb').write(k.public_key().public_bytes(s.Encoding.PEM, s.PublicFormat.SubjectPublicKeyInfo))"
+cd ..
+```
+
 Do not commit `.env`, private keys, or database data.
 
-Start PostgreSQL, run the Alembic migration job, FastAPI, and KrakenD:
+**Option A: everything in Docker.** Starts PostgreSQL, runs the Alembic migration job, then starts the API:
 
 ```powershell
 docker compose up --build -d
 docker compose ps
 ```
 
-For the teammate-friendly guided startup flow, run these scripts from the project root:
+Or use the guided scripts from the project root. `start-fastapi.ps1` waits for PostgreSQL, runs `alembic upgrade head`, starts the API only after migrations succeed, and checks `http://localhost:8000/health`:
 
 ```powershell
 .\scripts\start-postgres.ps1
 .\scripts\start-fastapi.ps1
-.\scripts\start-krakend.ps1
 ```
-
-The FastAPI script waits for PostgreSQL, runs `alembic upgrade head`, and only starts FastAPI after migrations succeed. The KrakenD script then starts the gateway and verifies `http://localhost:8080/health`.
 
 The migration container is a one-shot job. `Exited (0)` means the migration completed successfully.
 
-Verify the gateway:
+**Option B: database in Docker, API with uv (auto-reloads on code changes).**
 
 ```powershell
-Invoke-RestMethod http://localhost:8080/health
+docker compose up -d postgres migrations
+cd backend
+uv sync
+uv run fastapi dev main.py
+```
+
+The API reads `.env` from the project root.
+
+Verify the API:
+
+```powershell
+Invoke-RestMethod http://localhost:8000/health
 ```
 
 Expected response:
@@ -70,8 +86,8 @@ ok
 View service logs when troubleshooting:
 
 ```powershell
-docker compose logs -f auth-service
-docker compose logs -f krakend
+docker compose logs -f api
+docker compose logs -f postgres
 ```
 
 Stop the backend stack:
@@ -82,10 +98,10 @@ docker compose down
 
 ## Run the web app
 
-The web client reaches the local gateway through `localhost`. Keep these values in `.env`:
+The web client reaches the local API through `localhost`. Keep these values in `.env`:
 
 ```env
-EXPO_PUBLIC_API_BASE_URL=http://localhost:8080
+EXPO_PUBLIC_API_BASE_URL=http://localhost:8000
 CORS_ALLOWED_ORIGINS=http://localhost:8081,http://127.0.0.1:8081
 ```
 
@@ -126,7 +142,7 @@ adb devices
 For the Android emulator, override the browser API URL with the host-machine address:
 
 ```powershell
-$env:EXPO_PUBLIC_API_BASE_URL="http://10.0.2.2:8080"
+$env:EXPO_PUBLIC_API_BASE_URL="http://10.0.2.2:8000"
 npx expo run:android --device Medium_Phone
 ```
 
@@ -165,7 +181,7 @@ npx expo run:ios
 node_modules\.bin\tsc.cmd --noEmit
 cmd /c npm.cmd test -- --runInBand
 cmd /c npm.cmd run lint
-.venv\Scripts\python.exe -m pytest backend\tests -q
+cd backend; uv run pytest; cd ..
 ```
 
 Run the full authentication integration tests against the running Docker services:
@@ -174,11 +190,11 @@ Run the full authentication integration tests against the running Docker service
 .\scripts\test-integration.ps1
 ```
 
-These tests send real requests through KrakenD to FastAPI and PostgreSQL. They are opt-in because Docker Desktop and the migrated database must be running first.
+These tests send real requests to FastAPI and PostgreSQL. They are opt-in because Docker Desktop and the migrated database must be running first.
 
 ## Authentication endpoints
 
-KrakenD forwards these routes to FastAPI:
+FastAPI serves these routes on port `8000`:
 
 ```text
 POST /v1/auth/register
@@ -202,6 +218,6 @@ If port `8081` is already in use by another Metro server, stop the old server an
 npx expo start --clear --port 8081
 ```
 
-If the gateway cannot be reached, confirm Docker Desktop is running, KrakenD is listening on port `8080`, and the Android emulator is using `10.0.2.2` rather than `localhost`.
+If the API cannot be reached, confirm it is running on port `8000` (`docker compose ps` or the `uv run fastapi dev` terminal) and that the Android emulator is using `10.0.2.2` rather than `localhost`.
 
 # DevOppers

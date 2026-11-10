@@ -1,3 +1,11 @@
+x-api-build: &api-build
+  context: ./backend
+  dockerfile: Dockerfile
+
+# Containers reach Postgres by its service name, so they build their own URL.
+# DATABASE_URL in .env points at localhost for running the app with uv.
+x-container-database-url: &container-database-url postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -6,7 +14,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      # Only this computer can connect; other devices on the network cannot.
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -16,22 +25,18 @@ services:
       retries: 10
 
   migrations:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
+    build: *api-build
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: *container-database-url
     depends_on:
       postgres:
         condition: service_healthy
     command: ["alembic", "upgrade", "head"]
 
-  auth-service:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
+  api:
+    build: *api-build
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: *container-database-url
       JWT_PRIVATE_KEY_PATH: /run/secrets/jwt-private.pem
       JWT_PUBLIC_KEY_PATH: /run/secrets/jwt-public.pem
       JWT_ISSUER: ${JWT_ISSUER}
@@ -44,21 +49,19 @@ services:
       ARGON2_PARALLELISM: ${ARGON2_PARALLELISM}
       ARGON2_HASH_LENGTH: ${ARGON2_HASH_LENGTH}
       ARGON2_SALT_LENGTH: ${ARGON2_SALT_LENGTH}
+      ACCESS_TOKEN_TTL_MINUTES: ${ACCESS_TOKEN_TTL_MINUTES}
+      REFRESH_TOKEN_TTL_DAYS: ${REFRESH_TOKEN_TTL_DAYS}
+      AFK_TIMEOUT_MINUTES: ${AFK_TIMEOUT_MINUTES}
+      LOGIN_RATE_LIMIT: ${LOGIN_RATE_LIMIT}
+      LOGIN_RATE_WINDOW_SECONDS: ${LOGIN_RATE_WINDOW_SECONDS}
+    ports:
+      - "8000:8000"
     volumes:
       - ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro
       - ./secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro
     depends_on:
       migrations:
         condition: service_completed_successfully
-
-  krakend:
-    image: devopsfaith/krakend:2.9
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./krakend/krakend.json:/etc/krakend/krakend.json:ro
-    depends_on:
-      - auth-service
 
 volumes:
   postgres-data:

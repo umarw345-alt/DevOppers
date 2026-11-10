@@ -5,9 +5,9 @@ Assert-DockerReady
 
 $env:RUN_INTEGRATION_TESTS = '1'
 
-Push-Location $ProjectRoot
+Push-Location (Join-Path $ProjectRoot 'backend')
 try {
-    & python -m pytest backend/tests/test_integration.py -q
+    & uv run pytest tests/test_integration.py -q
     if ($LASTEXITCODE -ne 0) {
         throw "Integration tests failed with exit code $LASTEXITCODE."
     }

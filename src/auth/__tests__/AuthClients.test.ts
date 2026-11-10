@@ -15,7 +15,7 @@ describe('authentication client', () => {
 
     await expect(register('user@example.com', 'password123')).resolves.toEqual(response);
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'http://10.0.2.2:8080/v1/auth/register',
+      'http://10.0.2.2:8000/v1/auth/register',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ email: 'user@example.com', password: 'password123' }),
@@ -57,7 +57,7 @@ describe('authentication client', () => {
 
     await logout('access-token');
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      'http://10.0.2.2:8080/v1/auth/logout',
+      'http://10.0.2.2:8000/v1/auth/logout',
       expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer access-token' }) }),
     );
   });

@@ -1,25 +1,41 @@
 # Portable Resume Backend
 
-FastAPI backend for Portable Resume. Uses [uv](https://docs.astral.sh/uv/) for packages.
+FastAPI backend for Portable Resume: one app (`main.py`) serving authentication and portfolio routes on port 8000. Uses [uv](https://docs.astral.sh/uv/) for packages; run every command from this `backend/` folder.
+
+- `auth_service/` - register, login, refresh, logout and idle tracking under `/v1/auth/*` (Argon2id, RS256 JWTs, PostgreSQL)
+- `portfolio/` - static portfolio site generator (see below)
+- `migrations/` + `alembic.ini` - database schema migrations
 
 ## Setup
 
+PostgreSQL runs in Docker (see the root README for `.env` and JWT keys):
+
 ```bash
+docker compose up -d postgres migrations   # from the project root
 uv sync
 uv run fastapi dev main.py
 ```
 
-API docs: http://127.0.0.1:8000/docs
+The app loads `.env` from the project root. API docs: http://127.0.0.1:8000/docs
+
+To create a new migration after changing `auth_service/models.py` (Postgres must be running):
+
+```bash
+uv run --env-file ../.env alembic revision --autogenerate -m "describe change"
+uv run --env-file ../.env alembic upgrade head
+```
 
 ## Tests
 
 ```bash
-uv run pytest --cov=portfolio --cov=main
+uv run pytest --cov=portfolio --cov=auth_service --cov=main
 ```
 
 - `tests/unit/` - single functions and models on their own
 - `tests/component/` - the generator with the real templates
 - `tests/system/` - full requests through the API
+- `tests/test_security.py`, `tests/test_rate_limit.py` - auth helpers
+- `tests/test_integration.py` - opt-in auth tests against the running Docker stack (see `tests/run_tests.md`)
 
 PRs should keep coverage above 80%.
 
