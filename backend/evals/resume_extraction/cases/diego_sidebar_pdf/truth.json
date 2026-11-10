@@ -1,0 +1,75 @@
+{
+  "contact": {
+    "name": "Diego Ramirez",
+    "headline": "Product Designer",
+    "email": "diego.r.design@example.com",
+    "phone": "+1 415 555 0199",
+    "location": "Oakland, CA",
+    "links": [
+      {
+        "label": "Portfolio",
+        "url": "https://diegoramirez.example.com/"
+      },
+      {
+        "label": "LinkedIn",
+        "url": "https://linkedin.com/in/diego-ramirez-design"
+      }
+    ]
+  },
+  "summary": "Product designer with five years of experience turning messy workflows into calm, accessible interfaces.",
+  "education": [
+    {
+      "organization": "California College of the Arts",
+      "title": "BFA Interaction Design",
+      "location": null,
+      "start": "2015-09",
+      "end": "2019-05",
+      "bullets": []
+    }
+  ],
+  "experience": [
+    {
+      "organization": "Fernway Health",
+      "title": "Senior Product Designer",
+      "location": "Remote",
+      "start": "2023-03",
+      "end": null,
+      "bullets": [
+        "Lead design for the patient intake flow used by 120 clinics",
+        "Raised form completion from 61% to 84% after a usability study series",
+        "Run a weekly design critique for a team of six designers"
+      ]
+    },
+    {
+      "organization": "Loop & Co.",
+      "title": "Product Designer",
+      "location": "San Francisco, CA",
+      "start": "2020-01",
+      "end": "2023-02",
+      "bullets": [
+        "Designed the mobile checkout redesign that lifted conversion 12%",
+        "Built the first shared component library in Figma"
+      ]
+    },
+    {
+      "organization": "Studio Nueve",
+      "title": "Design Intern",
+      "location": "Oakland, CA",
+      "start": "2019-06",
+      "end": "2019-12",
+      "bullets": [
+        "Produced wireframes and prototypes for three client websites"
+      ]
+    }
+  ],
+  "projects": [],
+  "skills": [
+    "Figma",
+    "User research",
+    "Prototyping",
+    "Design systems",
+    "Accessibility (WCAG)",
+    "HTML/CSS"
+  ],
+  "hidden_fields": []
+}

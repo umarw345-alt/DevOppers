@@ -1,0 +1,39 @@
+{
+  "contact": {
+    "name": "Tom Baker",
+    "headline": null,
+    "email": "tbaker2007@example.com",
+    "phone": null,
+    "location": "Santa Clara, CA",
+    "links": []
+  },
+  "summary": null,
+  "education": [
+    {
+      "organization": "Santa Clara High School",
+      "title": "High School Diploma",
+      "location": null,
+      "start": "2021",
+      "end": "2025",
+      "bullets": []
+    }
+  ],
+  "experience": [
+    {
+      "organization": "Bayside Pizza",
+      "title": "Cashier",
+      "location": null,
+      "start": "2023",
+      "end": null,
+      "bullets": [
+        "Handle orders and payments during evening shifts"
+      ]
+    }
+  ],
+  "projects": [],
+  "skills": [
+    "Customer service",
+    "Spanish (conversational)"
+  ],
+  "hidden_fields": []
+}
