@@ -1,0 +1,59 @@
+{
+  "contact": {
+    "name": "Lena Fischer",
+    "headline": "Data Analyst",
+    "email": "lena.fischer@example.com",
+    "phone": "(408) 555-0188",
+    "location": "Sunnyvale, CA",
+    "links": [
+      {
+        "label": "GitHub",
+        "url": "https://github.com/lenafischer"
+      }
+    ]
+  },
+  "summary": "Data analyst who turns operations data into clear weekly decisions.",
+  "education": [
+    {
+      "organization": "UC Davis",
+      "title": "B.S. Statistics",
+      "location": null,
+      "start": "2017-09",
+      "end": "2021-06",
+      "bullets": []
+    }
+  ],
+  "experience": [
+    {
+      "organization": "Greenleaf Grocers",
+      "title": "Data Analyst",
+      "location": "Sunnyvale, CA",
+      "start": "2022-02",
+      "end": null,
+      "bullets": [
+        "Built the weekly inventory forecast used by 85 stores",
+        "Automated 12 Excel reports with Python and dbt"
+      ]
+    },
+    {
+      "organization": "UC Davis Library",
+      "title": "Student Data Assistant",
+      "location": "Davis, CA",
+      "start": "2019-09",
+      "end": "2021-06",
+      "bullets": [
+        "Cleaned and published circulation datasets"
+      ]
+    }
+  ],
+  "projects": [],
+  "skills": [
+    "SQL",
+    "Python",
+    "pandas",
+    "dbt",
+    "Tableau",
+    "Excel"
+  ],
+  "hidden_fields": []
+}

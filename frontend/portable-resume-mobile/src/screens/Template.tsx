@@ -1,9 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, BackHandler, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, BackHandler, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { C, MONO, Pill, Screen, T } from '../theme';
 import { DEFAULT_TPLS, Resume, Tpl, getTemplates, errorMessage, previewHtml } from '../api';
 import type { Site } from './Menu';
+
+// react-native-webview has no web version, so browsers get an iframe.
+// sandbox="" blocks scripts in the preview; the generated site is plain HTML + CSS.
+function Preview({ html, onError }: { html: string; onError: () => void }) {
+  if (Platform.OS === 'web') {
+    return React.createElement('iframe', {
+      srcDoc: html, sandbox: '', title: 'Portfolio preview',
+      style: { border: 0, width: '100%', height: '100%' },
+    });
+  }
+  return <WebView originWhitelist={['*']} source={{ html }} nestedScrollEnabled onError={onError} />;
+}
 
 const ACCENTS = ['#1e3a8a', '#8b2e2e', '#0f766e', '#6d28d9', '#b45309', '#be123c'];
 const FONTS = ['serif', 'sans', 'mono', 'display'];
@@ -76,7 +88,7 @@ export default function Template({ resume, onBack, onDone }: { resume: Resume; o
         </View>
         {!!err && <Text style={{ color: '#FFB4B4', marginTop: 12 }}>{err}</Text>}
         <View style={{ height: 360, borderRadius: 16, overflow: 'hidden', backgroundColor: '#fff', marginTop: 14 }}>
-          {html && !loading && !err ? <WebView originWhitelist={['*']} source={{ html }} nestedScrollEnabled onError={() => { setHtml(''); setErr('Could not display the preview.'); }} /> : <Text style={{ padding: 16, color: '#6C86AC' }}>{err ? 'No preview yet.' : 'Loading preview…'}</Text>}
+          {html && !loading && !err ? <Preview html={html} onError={() => { setHtml(''); setErr('Could not display the preview.'); }} /> : <Text style={{ padding: 16, color: '#6C86AC' }}>{err ? 'No preview yet.' : 'Loading preview…'}</Text>}
         </View>
         <Text style={[T.mono, { marginTop: 12 }]}>Saved on this device. Publishing and shareable links are not available yet.</Text>
         <Pill label="GENERATE WITH AI" color="#33445F" style={{ marginTop: 14 }} onPress={() => Alert.alert('Coming soon', 'AI-generated designs are planned for later.')} />

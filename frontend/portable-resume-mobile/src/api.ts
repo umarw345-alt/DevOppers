@@ -4,7 +4,7 @@ declare const process: any;
 // Android emulator reaches your computer at 10.0.2.2. On a real phone set the EXPO_PUBLIC_* vars to your computer's LAN IP.
 const HOST = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
 const API = process.env.EXPO_PUBLIC_API_BASE_URL?.replace(/\/+$/, '') || `http://${HOST}:8000`; // FastAPI backend
-export const USE_SAMPLE_DATA = true; // resume scan is still a stub on the backend; set false when /resume/upload works
+export const USE_SAMPLE_DATA = false; // true = skip the backend and load the example resume (offline demo)
 
 export type Entry = { organization: string; title: string; start: string; end: string; bullets: string };
 export type Resume = { name: string; headline: string; email: string; phone: string; location: string; summary: string; skills: string; experience: Entry[]; education: Entry[] };
@@ -27,9 +27,9 @@ const json = { 'Content-Type': 'application/json' };
 export const errorMessage = (e: unknown) => e instanceof Error ? e.message : 'Something went wrong. Please try again.';
 
 // Keep the timeout active while the response body is being read too.
-async function request<T>(url: string, options: RequestInit, read: (res: Response) => Promise<T>): Promise<T> {
+async function request<T>(url: string, options: RequestInit, read: (res: Response) => Promise<T>, timeoutMs = 15000): Promise<T> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try { return await read(await fetch(url, { ...options, signal: controller.signal })); }
   catch (e) {
     if (controller.signal.aborted) throw new Error('The server took too long. Please try again.');
@@ -62,18 +62,43 @@ const fromApi = (d: any): Resume => ({
   experience: (d.experience ?? []).map(fromEntry), education: (d.education ?? []).map(fromEntry),
 });
 
-export async function extractResume(f: { uri: string; name: string; mimeType?: string }): Promise<Resume> {
+// Same cookie the login system sets for web (see src/auth/AuthClients.ts).
+const webCsrfToken = (): string | undefined => {
+  const cookie = (globalThis as any).document?.cookie?.split('; ').find((c: string) => c.startsWith('auth_csrf_token='));
+  return cookie ? decodeURIComponent(cookie.slice('auth_csrf_token='.length)) : undefined;
+};
+
+// Reading a resume with Claude takes about 5-15 s, longer than the default timeout.
+const UPLOAD_TIMEOUT_MS = 60000;
+
+export async function extractResume(
+  f: { uri: string; name: string; mimeType?: string; file?: File },
+  accessToken?: string | null,
+): Promise<Resume> {
   if (USE_SAMPLE_DATA) {
     await new Promise<void>((resolve) => setTimeout(resolve, 500));
     return JSON.parse(JSON.stringify(SAMPLE)) as Resume;
   }
+  const isWeb = Platform.OS === 'web';
   const form = new FormData();
-  form.append('file', { uri: f.uri, name: f.name, type: f.mimeType ?? 'application/pdf' } as any);
-  return request(`${API}/resume/upload`, { method: 'POST', body: form }, async (res) => {
-    if (!res.ok) throw new Error('Could not read that file.');
+  if (isWeb && f.file) form.append('file', f.file as any); // browsers need the real File object (it carries its name)
+  else form.append('file', { uri: f.uri, name: f.name, type: f.mimeType ?? 'application/pdf' } as any);
+
+  // Web logs in with HttpOnly cookies (+ CSRF header); native sends the access token.
+  const csrf = isWeb ? webCsrfToken() : undefined;
+  const headers: Record<string, string> = { 'X-Client-Platform': isWeb ? 'web' : 'native' };
+  if (csrf) headers['X-CSRF-Token'] = csrf;
+  if (!isWeb && accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
+  return request(`${API}/resume/upload`, { method: 'POST', body: form, headers, credentials: isWeb ? 'include' : 'omit' }, async (res) => {
+    if (res.status === 401) throw new Error('Your session expired. Log in again.');
+    if (!res.ok) {
+      const d = await res.json().catch(() => ({}));
+      throw new Error(serverMessage(d, 'Could not read that file.'));
+    }
     try { return fromApi(await res.json()); }
     catch { throw new Error('The server returned an unreadable resume. Please try another file.'); }
-  });
+  }, UPLOAD_TIMEOUT_MS);
 }
 
 export async function getTemplates(): Promise<Tpl[]> {
@@ -93,10 +118,9 @@ export async function getTemplates(): Promise<Tpl[]> {
 }
 
 export async function previewHtml(resume: Resume, template_id: string, theme: { accent?: string; font?: string }): Promise<string> {
-  const previewTheme = {
-    ...theme,
-    accent: theme.accent ?? DEFAULT_TPLS.find((t) => t.id === template_id)?.accent,
-  };
+  // No accent picked ("DEFAULT") -> let the backend use the template's own accent.
+  // The tile colors in DEFAULT_TPLS are for the picker only; e.g. dark's gray tile is unreadable as an accent on the dark template.
+  const previewTheme = theme.accent ? theme : { ...theme, accent: undefined };
   return request(`${API}/portfolio/preview`, {
     method: 'POST', headers: json, body: JSON.stringify({ resume: toApi(resume), template_id, theme: previewTheme }),
   }, async (res) => {

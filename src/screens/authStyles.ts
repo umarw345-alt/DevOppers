@@ -9,7 +9,6 @@ export const authColors = {
   field: '#f7f9fc',
   border: '#c9d2df',
   danger: '#b42318',
-  success: '#067647',
 };
 
 export const authStyles = StyleSheet.create({
@@ -17,7 +16,6 @@ export const authStyles = StyleSheet.create({
   content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 36 },
   brand: { alignItems: 'center', marginBottom: 24 },
   title: { color: authColors.white, fontSize: 36, fontWeight: '300', letterSpacing: 1.5, textAlign: 'center' },
-  successTitle: { color: authColors.ink, fontSize: 28, fontWeight: '300', letterSpacing: 1.5, textAlign: 'center' },
   slogan: { color: authColors.white, fontSize: 17, lineHeight: 22, marginTop: 10, maxWidth: 290, textAlign: 'center' },
   card: { alignSelf: 'center', backgroundColor: authColors.white, borderRadius: 12, maxWidth: 440, padding: 22, width: '100%' },
   label: { color: authColors.ink, fontSize: 13, fontWeight: '700', marginBottom: 6, marginTop: 12 },
@@ -30,7 +28,4 @@ export const authStyles = StyleSheet.create({
   secondaryAction: { alignItems: 'center', marginTop: 18 },
   secondaryActionText: { color: authColors.blue, fontSize: 14, fontWeight: '700' },
   helper: { color: authColors.muted, fontSize: 12, marginTop: 16, textAlign: 'center' },
-  successHelper: { color: authColors.ink },
-  status: { fontSize: 13, marginTop: 12, textAlign: 'center' },
-  statusSuccess: { color: authColors.success },
 });
