@@ -220,4 +220,11 @@ npx expo start --clear --port 8081
 
 If the API cannot be reached, confirm it is running on port `8000` (`docker compose ps` or the `uv run fastapi dev` terminal) and that the Android emulator is using `10.0.2.2` rather than `localhost`.
 
+If you are receiving 'Unable to reach the authentication service' in the login page, you may need to use http://127.0.0.1:8081 instead of http://localhost:8081
+
+You may need to change the start-up script .\scripts\start-fastapi.ps1 and have this in line 23 if localhost is used:
+```
+$health = Invoke-RestMethod -Uri 'http://127.0.0.1:8000/health' -Method Get -TimeoutSec 5
+```
+
 # DevOppers
