@@ -76,6 +76,9 @@ __pycache__/
 .mypy_cache/
 .venv/
 /secrets/*.pem
+/secrets/*.cer
+/secrets/*.key
+/secrets/*.p12
 /postgres-data/
 
 # Yarn

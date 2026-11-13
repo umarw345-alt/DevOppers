@@ -6,6 +6,7 @@ from sqlalchemy import engine_from_config, pool
 
 from auth_service.db import Base
 from auth_service import models  # noqa: F401 - registers model metadata
+from wallets import models as wallet_models  # noqa: F401 - registers wallet metadata
 
 config = context.config
 if config.config_file_name is not None:

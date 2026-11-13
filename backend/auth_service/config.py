@@ -13,6 +13,11 @@ def _bool_env(name: str, default: bool) -> bool:
     return default if value is None else value.lower() in {"1", "true", "yes", "on"}
 
 
+def _optional_path_env(name: str) -> Path | None:
+    value = os.getenv(name)
+    return Path(value) if value else None
+
+
 @dataclass(frozen=True)
 class Settings:
     database_url: str
@@ -33,6 +38,9 @@ class Settings:
     cors_allowed_origins: tuple[str, ...] = ()
     web_cookie_secure: bool = False
     web_cookie_samesite: str = "lax"
+    apple_pass_certificate_path: Path | None = None
+    apple_pass_private_key_path: Path | None = None
+    apple_wwdr_certificate_path: Path | None = None
 
 
 def load_settings() -> Settings:
@@ -59,4 +67,7 @@ def load_settings() -> Settings:
         ),
         web_cookie_secure=_bool_env("WEB_COOKIE_SECURE", False),
         web_cookie_samesite=os.getenv("WEB_COOKIE_SAMESITE", "lax"),
+        apple_pass_certificate_path=_optional_path_env("APPLE_PASS_CERTIFICATE_PATH"),
+        apple_pass_private_key_path=_optional_path_env("APPLE_PASS_PRIVATE_KEY_PATH"),
+        apple_wwdr_certificate_path=_optional_path_env("APPLE_WWDR_CERTIFICATE_PATH"),
     )
