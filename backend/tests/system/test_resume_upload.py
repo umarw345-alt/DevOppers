@@ -42,7 +42,8 @@ def reply(resume, stop_reason="end_turn"):
 
 
 @pytest.fixture
-def fake(full_resume):
+def fake(full_resume, monkeypatch):
+    monkeypatch.setattr("resume.routes.spend_daily_upload", lambda request, user_id: None)
     messages = FakeMessages()
     messages.response = reply(Resume.model_validate(full_resume))
     app.dependency_overrides[access_identity] = lambda: (uuid4(), uuid4())
