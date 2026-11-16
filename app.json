@@ -1,3 +1,11 @@
 {
-  "name": "Login_Authenticator"
+  "name": "Login_Authenticator",
+  "web": {
+    "name": "Portable Resume",
+    "shortName": "Portable Resume",
+    "description": "Your resume as a website and an Apple Wallet card.",
+    "themeColor": "#0B0B0C",
+    "backgroundColor": "#0B0B0C",
+    "favicon": "./assets/favicon.png"
+  }
 }

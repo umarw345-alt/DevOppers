@@ -2,12 +2,16 @@
 
 import logging
 import os
+from datetime import timedelta
 from typing import Annotated
 
 import anthropic
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
+from sqlalchemy import func, select
 
-from auth_service.fastapi_routes import _require_csrf, access_identity
+from auth_service.fastapi_routes import _db, _require_csrf, access_identity
+from auth_service.models import ResumeUpload
+from auth_service.security import utc_now
 from portfolio.schema import Resume
 from resume.extractor import ExtractionError, extract_resume
 
@@ -15,6 +19,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["resume"])
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+DAILY_UPLOAD_CAP = int(os.getenv("DAILY_UPLOAD_CAP", "200"))
 # Identify the file by its first bytes; the client's content type can't be trusted.
 SIGNATURES = {b"%PDF": "application/pdf", b"\xff\xd8\xff": "image/jpeg", b"\x89PNG": "image/png"}
 
@@ -27,6 +32,16 @@ def get_anthropic_client(request: Request) -> anthropic.Anthropic:
     if client is None:
         client = request.app.state.anthropic_client = anthropic.Anthropic()
     return client
+
+
+def spend_daily_upload(request: Request, user_id) -> None:
+    """Every upload is a paid Claude call, so the whole site gets DAILY_UPLOAD_CAP per 24 hours."""
+    with _db(request) as db:
+        used = db.scalar(select(func.count()).select_from(ResumeUpload).where(ResumeUpload.created_at > utc_now() - timedelta(days=1)))
+        if used >= DAILY_UPLOAD_CAP:
+            raise HTTPException(status_code=429, detail="Resume reading is at today's limit. Start blank and type it in, or try tomorrow.")
+        db.add(ResumeUpload(user_id=user_id, created_at=utc_now()))
+        db.commit()
 
 
 def detect_type(data: bytes) -> str | None:
@@ -57,6 +72,7 @@ def upload_resume(
     mime_type = detect_type(data)
     if mime_type is None:
         raise HTTPException(status_code=415, detail="Upload a PDF, JPEG, or PNG.")
+    spend_daily_upload(request, user_id)
 
     try:
         result = extract_resume(data, mime_type, client=client)

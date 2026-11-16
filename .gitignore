@@ -75,7 +75,7 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .venv/
-/secrets/*.pem
+/secrets/
 /postgres-data/
 
 # Yarn
@@ -97,3 +97,6 @@ web-build/
 # Local progress notes
 TODAY_PROGRESS.local.md
 CODE_REVIEW.local.md
+
+# Web build copied into the API for Vercel (scripts/deploy-vercel.sh)
+/backend/public/
