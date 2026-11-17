@@ -5,6 +5,7 @@ Revises: 002_portfolios
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import inspect
 
 revision = "003_resume_uploads"
 down_revision = "002_portfolios"
@@ -13,6 +14,8 @@ depends_on = None
 
 
 def upgrade() -> None:
+    if "resume_uploads" in inspect(op.get_bind()).get_table_names():
+        return
     op.create_table(
         "resume_uploads",
         sa.Column("id", sa.BigInteger(), primary_key=True, autoincrement=True),

@@ -2,15 +2,17 @@
 
 import os
 import re
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 
 from auth_service.fastapi_routes import _db, _require_csrf, access_identity
-from auth_service.models import Portfolio
+from auth_service.models import Portfolio, ResumeRecord
 from auth_service.security import utc_now
 from portfolio.generator import inline_css, render
 from portfolio.schema import Resume, Theme
@@ -35,7 +37,14 @@ def public_url(slug: str) -> str:
 
 
 def to_json(p: Portfolio) -> dict:
-    return {"slug": p.slug, "url": public_url(p.slug), "resume": p.resume, "template_id": p.template_id, "theme": p.theme}
+    slug = p.public_slug
+    return {
+        "slug": slug,
+        "url": public_url(slug),
+        "resume": p.resume_record.resume_json if p.resume_record else {},
+        "template_id": p.template_id,
+        "theme": p.theme_json or {},
+    }
 
 
 def render_page(design: Design) -> str:
@@ -66,7 +75,12 @@ def preview(design: Design):
 @router.get("/portfolios")
 def list_mine(request: Request, identity=Depends(access_identity)):
     with _db(request) as db:
-        rows = db.scalars(select(Portfolio).where(Portfolio.user_id == identity[0]).order_by(Portfolio.updated_at.desc()))
+        rows = db.scalars(
+            select(Portfolio)
+            .options(selectinload(Portfolio.resume_record))
+            .where(Portfolio.user_id == identity[0])
+            .order_by(Portfolio.updated_at.desc())
+        )
         return [to_json(p) for p in rows]
 
 
@@ -78,16 +92,47 @@ def publish(slug: str, design: Design, request: Request, identity=Depends(access
         raise HTTPException(status_code=422, detail="Links are 3-40 lowercase letters, numbers and dashes.")
     render_page(design)
     with _db(request) as db:
-        p = db.get(Portfolio, slug)
+        p = db.scalar(select(Portfolio).where(Portfolio.public_slug == slug).options(selectinload(Portfolio.resume_record)))
         if p is None:
-            p = Portfolio(slug=slug, user_id=identity[0])
+            now = utc_now()
+            resume_record = ResumeRecord(
+                id=uuid4(),
+                user_id=identity[0],
+                resume_json=design.resume.model_dump(mode="json"),
+                created_at=now,
+                updated_at=now,
+            )
+            p = Portfolio(
+                id=uuid4(),
+                user_id=identity[0],
+                resume_record=resume_record,
+                template_id=design.template_id,
+                theme_json=design.theme.model_dump(mode="json", exclude_none=True),
+                status="published",
+                public_slug=slug,
+                created_at=now,
+                updated_at=now,
+            )
             db.add(p)
         elif p.user_id != identity[0]:
             raise HTTPException(status_code=409, detail="That link is taken. Try another.")
-        p.resume = design.resume.model_dump(mode="json")
-        p.template_id = design.template_id
-        p.theme = design.theme.model_dump(mode="json", exclude_none=True)
-        p.updated_at = utc_now()
+        else:
+            now = utc_now()
+            if p.resume_record is None:
+                p.resume_record = ResumeRecord(
+                    id=uuid4(),
+                    user_id=identity[0],
+                    resume_json=design.resume.model_dump(mode="json"),
+                    created_at=now,
+                    updated_at=now,
+                )
+            else:
+                p.resume_record.resume_json = design.resume.model_dump(mode="json")
+                p.resume_record.updated_at = now
+            p.template_id = design.template_id
+            p.theme_json = design.theme.model_dump(mode="json", exclude_none=True)
+            p.status = "published"
+            p.updated_at = now
         try:
             db.commit()
         except IntegrityError:
@@ -99,7 +144,7 @@ def publish(slug: str, design: Design, request: Request, identity=Depends(access
 def delete(slug: str, request: Request, identity=Depends(access_identity)):
     _require_csrf(request)
     with _db(request) as db:
-        p = db.get(Portfolio, slug)
+        p = db.scalar(select(Portfolio).where(Portfolio.public_slug == slug))
         if p is None or p.user_id != identity[0]:
             raise HTTPException(status_code=404, detail="Portfolio not found.")
         db.delete(p)
@@ -108,7 +153,7 @@ def delete(slug: str, request: Request, identity=Depends(access_identity)):
 
 def find(request: Request, slug: str) -> Portfolio:
     with _db(request) as db:
-        p = db.get(Portfolio, slug)
+        p = db.scalar(select(Portfolio).where(Portfolio.public_slug == slug).options(selectinload(Portfolio.resume_record)))
     if p is None:
         raise HTTPException(status_code=404, detail="No portfolio at this link.")
     return p
@@ -119,7 +164,7 @@ def find(request: Request, slug: str) -> Portfolio:
 def public_page(slug: str, request: Request):
     """What a recruiter sees after scanning the QR code. No login needed."""
     p = find(request, slug)
-    return render_page(Design(resume=p.resume, template_id=p.template_id, theme=p.theme))
+    return render_page(Design(resume=p.resume_record.resume_json, template_id=p.template_id, theme=p.theme_json or {}))
 
 
 @router.get("/{slug}/pass.pkpass", include_in_schema=False)
@@ -127,7 +172,7 @@ def wallet_pass(slug: str, request: Request):
     """Apple Wallet card in the portfolio's accent color. Public: it only holds the name, title and public link.
     Its QR code is just the URL, so editing the portfolio never needs a new pass."""
     p = find(request, slug)
-    design = Design(resume=p.resume, template_id=p.template_id, theme=p.theme)
+    design = Design(resume=p.resume_record.resume_json, template_id=p.template_id, theme=p.theme_json or {})
     try:
         data = build_pass(
             serial=slug,
