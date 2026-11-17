@@ -6,6 +6,7 @@ Revises: 001_initial_auth_schema
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import inspect
 
 revision = "002_portfolios"
 down_revision = "001_initial_auth_schema"
@@ -14,6 +15,8 @@ depends_on = None
 
 
 def upgrade() -> None:
+    if "portfolios" in inspect(op.get_bind()).get_table_names():
+        return
     op.create_table(
         "portfolios",
         sa.Column("slug", sa.String(40), primary_key=True),

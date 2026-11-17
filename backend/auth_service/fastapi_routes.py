@@ -184,7 +184,7 @@ def login(payload: Credentials, request: Request, response: Response):
     try:
         user = db.scalar(select(User).where(User.email == email))
         valid = False
-        if user is not None:
+        if user is not None and user.password_hash:
             try:
                 valid = build_password_hasher(request.app.state.settings).verify(user.password_hash, payload.password)
             except (InvalidHashError, VerifyMismatchError):
