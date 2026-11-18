@@ -100,3 +100,5 @@ CODE_REVIEW.local.md
 
 # Web build copied into the API for Vercel (scripts/deploy-vercel.sh)
 /backend/public/
+.vercel
+.env*

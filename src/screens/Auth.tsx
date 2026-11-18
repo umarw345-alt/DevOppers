@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
+import { startGoogleSignIn } from '../auth/GoogleAuth';
 import { Back, Button, C, Field, Page, T } from '../theme';
 
 type Props = {
@@ -17,6 +18,7 @@ export default function Auth({ mode: startMode, error, isLoading, onLogin, onReg
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [hint, setHint] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
   const registering = mode === 'register';
 
   const submit = () => {
@@ -30,6 +32,17 @@ export default function Auth({ mode: startMode, error, isLoading, onLogin, onReg
     setMode(registering ? 'login' : 'register');
     setHint('');
     onSwitch();
+  };
+
+  const continueWithGoogle = () => {
+    setHint('');
+    setGoogleLoading(true);
+    try {
+      startGoogleSignIn();
+    } catch {
+      setGoogleLoading(false);
+      setHint('Google sign-in is unavailable right now. Please try again.');
+    }
   };
 
   return (
@@ -52,6 +65,24 @@ export default function Auth({ mode: startMode, error, isLoading, onLogin, onReg
         />
         <Button label={registering ? 'Create account' : 'Log in'} onPress={submit} loading={isLoading} />
         {!!(hint || error) && <Text style={T.error}>{hint || error}</Text>}
+
+        {Platform.OS === 'web' && (
+          <>
+            <View style={[T.row, { marginVertical: 18 }]}>
+              <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
+              <Text style={T.dim}>or</Text>
+              <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
+            </View>
+            <Button
+              label="Continue with Google"
+              kind="secondary"
+              onPress={continueWithGoogle}
+              loading={googleLoading}
+              disabled={isLoading}
+            />
+            <Text style={[T.dim, { fontSize: 12, marginTop: 8 }]}>Google sign-in is handled securely by the server.</Text>
+          </>
+        )}
       </View>
 
       <View style={[T.row, { justifyContent: 'center', marginTop: 12 }]}>

@@ -33,6 +33,12 @@ class Settings:
     cors_allowed_origins: tuple[str, ...] = ()
     web_cookie_secure: bool = False
     web_cookie_samesite: str = "lax"
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+    google_redirect_uri: str = "http://localhost:8000/v1/auth/google/callback"
+    google_frontend_redirect_uri: str = "http://localhost:8081"
+    google_discovery_url: str = "https://accounts.google.com/.well-known/openid-configuration"
+    google_oidc_state_secret: str | None = None
 
 
 def load_settings() -> Settings:
@@ -59,4 +65,13 @@ def load_settings() -> Settings:
         ),
         web_cookie_secure=_bool_env("WEB_COOKIE_SECURE", False),
         web_cookie_samesite=os.getenv("WEB_COOKIE_SAMESITE", "lax"),
+        google_client_id=os.getenv("GOOGLE_CLIENT_ID") or None,
+        google_client_secret=os.getenv("GOOGLE_CLIENT_SECRET") or None,
+        google_redirect_uri=os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/v1/auth/google/callback"),
+        google_frontend_redirect_uri=os.getenv("GOOGLE_FRONTEND_REDIRECT_URI", "http://localhost:8081"),
+        google_discovery_url=os.getenv(
+            "GOOGLE_DISCOVERY_URL",
+            "https://accounts.google.com/.well-known/openid-configuration",
+        ),
+        google_oidc_state_secret=os.getenv("GOOGLE_OIDC_STATE_SECRET") or None,
     )

@@ -106,9 +106,16 @@ def _require_csrf(request: Request) -> None:
             raise HTTPException(status_code=403, detail="Invalid CSRF token")
 
 
-def _auth_response(request: Request, response: Response, user: User, session: Session, refresh_token: str):
+def _auth_response(
+    request: Request,
+    response: Response,
+    user: User,
+    session: Session,
+    refresh_token: str,
+    web: bool | None = None,
+):
     access_token = create_access_token(request.app.state.settings, user.id, session.id)
-    if _is_web_request(request):
+    if (_is_web_request(request) if web is None else web):
         _set_auth_cookies(request, response, access_token, refresh_token)
         return WebAuthResponse(user=UserResponse(id=user.id, email=user.email))
     return AuthResponse(
