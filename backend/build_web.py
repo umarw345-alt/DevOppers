@@ -1,0 +1,43 @@
+"""Build the Expo web frontend into the FastAPI deployment's public directory."""
+
+import os
+import subprocess
+from pathlib import Path
+
+
+BACKEND_DIR = Path(__file__).resolve().parent
+REPOSITORY_DIR = BACKEND_DIR.parent
+PUBLIC_DIR = BACKEND_DIR / "public"
+
+
+def command(name: str) -> str:
+    return f"{name}.cmd" if os.name == "nt" else name
+
+
+def run(*args: str, cwd: Path, env: dict[str, str] | None = None) -> None:
+    subprocess.run(args, cwd=cwd, env=env, check=True)
+
+
+def main() -> None:
+    build_env = os.environ.copy()
+    # The deployed web app calls the FastAPI function on its own origin.
+    # Local development keeps using the root .env value instead.
+    build_env["EXPO_NO_DOTENV"] = "1"
+    build_env["EXPO_PUBLIC_API_BASE_URL"] = ""
+
+    run(command("npm"), "ci", cwd=REPOSITORY_DIR, env=build_env)
+    run(
+        command("npx"),
+        "expo",
+        "export",
+        "--platform",
+        "web",
+        "--output-dir",
+        str(PUBLIC_DIR.relative_to(REPOSITORY_DIR)),
+        cwd=REPOSITORY_DIR,
+        env=build_env,
+    )
+
+
+if __name__ == "__main__":
+    main()
