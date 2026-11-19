@@ -1,13 +1,15 @@
-"""Build the Expo web frontend into the FastAPI deployment's public directory."""
+"""Build the Expo web frontend into the combined deployment's public directory."""
 
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
 
 BACKEND_DIR = Path(__file__).resolve().parent
 REPOSITORY_DIR = BACKEND_DIR.parent
-PUBLIC_DIR = BACKEND_DIR / "public"
+PUBLIC_DIR = REPOSITORY_DIR / "public"
+EXPORT_DIR = REPOSITORY_DIR / ".expo-vercel-build"
 
 
 def command(name: str) -> str:
@@ -26,6 +28,8 @@ def main() -> None:
     build_env["EXPO_PUBLIC_API_BASE_URL"] = ""
 
     run(command("npm"), "ci", cwd=REPOSITORY_DIR, env=build_env)
+    if EXPORT_DIR.exists():
+        shutil.rmtree(EXPORT_DIR)
     run(
         command("npx"),
         "expo",
@@ -33,10 +37,14 @@ def main() -> None:
         "--platform",
         "web",
         "--output-dir",
-        str(PUBLIC_DIR.relative_to(REPOSITORY_DIR)),
+        str(EXPORT_DIR.relative_to(REPOSITORY_DIR)),
         cwd=REPOSITORY_DIR,
         env=build_env,
     )
+    if PUBLIC_DIR.exists():
+        shutil.rmtree(PUBLIC_DIR)
+    shutil.copytree(EXPORT_DIR, PUBLIC_DIR)
+    shutil.rmtree(EXPORT_DIR)
 
 
 if __name__ == "__main__":
