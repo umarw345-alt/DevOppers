@@ -1,5 +1,6 @@
 """FastAPI web routes for Google OIDC sign-in."""
 
+import logging
 from hmac import compare_digest
 from uuid import uuid4
 
@@ -29,6 +30,7 @@ from .security import utc_now
 
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 GOOGLE_TRANSACTION_COOKIE = "google_oidc_transaction"
 GOOGLE_TRANSACTION_MAX_AGE = 300
 
@@ -100,7 +102,7 @@ def google_callback(request: Request, code: str | None = None, state: str | None
             identity.updated_at = utc_now()
         else:
             if db.scalar(select(User).where(User.email == email)) is not None:
-                raise HTTPException(status_code=409, detail="Google account must be linked explicitly")
+                raise HTTPException(status_code=409, detail="Google account must be linked explicitly. There may be an account already associated with this email.")
             now = utc_now()
             user = User(id=uuid4(), email=email, password_hash=None, created_at=now)
             identity = ExternalIdentity(
@@ -113,6 +115,11 @@ def google_callback(request: Request, code: str | None = None, state: str | None
                 updated_at=now,
             )
             db.add(user)
+            # Flush the parent first.  These models intentionally do not need
+            # an ORM relationship for normal reads, but the database foreign
+            # key still requires the user row to exist before the identity
+            # row is inserted.
+            db.flush()
             db.add(identity)
             db.flush()
 
@@ -120,6 +127,13 @@ def google_callback(request: Request, code: str | None = None, state: str | None
         db.commit()
     except IntegrityError as db_error:
         db.rollback()
+        original = getattr(db_error, "orig", None)
+        diagnostic = getattr(original, "diag", None)
+        logger.warning(
+            "Google identity link conflict: constraint=%s sqlstate=%s",
+            getattr(diagnostic, "constraint_name", None),
+            getattr(original, "sqlstate", None),
+        )
         raise HTTPException(status_code=409, detail="Google account could not be linked") from db_error
     finally:
         db.close()
