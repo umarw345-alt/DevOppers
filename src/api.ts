@@ -1,11 +1,9 @@
 import { Platform } from 'react-native';
 import { getWebCsrfToken } from './auth/AuthClients';
-
-declare const process: { env: { EXPO_PUBLIC_API_BASE_URL?: string } };
+import { getApiBaseUrl } from './auth/ApiBaseUrl';
 
 const isWeb = Platform.OS === 'web';
-// The Android emulator reaches your computer at 10.0.2.2.
-const API = (process.env.EXPO_PUBLIC_API_BASE_URL || `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:8000`).replace(/\/+$/, '');
+const API = getApiBaseUrl();
 
 // The edit form works on flat strings: skills are comma separated, bullets are one per line.
 export type Entry = { organization: string; title: string; start: string; end: string; bullets: string };
