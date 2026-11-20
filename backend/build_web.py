@@ -27,7 +27,11 @@ def main() -> None:
     build_env["EXPO_NO_DOTENV"] = "1"
     build_env["EXPO_PUBLIC_API_BASE_URL"] = ""
 
-    run(command("npm"), "ci", cwd=REPOSITORY_DIR, env=build_env)
+    # Vercel installs package.json dependencies before running this build.
+    # Keep npm ci for local builds, but avoid installing the same tree twice
+    # in production deployments.
+    if not os.getenv("VERCEL"):
+        run(command("npm"), "ci", cwd=REPOSITORY_DIR, env=build_env)
     if EXPORT_DIR.exists():
         shutil.rmtree(EXPORT_DIR)
     run(
