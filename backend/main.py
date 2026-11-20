@@ -24,6 +24,7 @@ for name in ("JWT_PRIVATE_KEY", "JWT_PUBLIC_KEY", "PASS_P12", "WWDR_CERT"):
 
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 from auth_service.config import load_settings  # noqa: E402
 from auth_service.db import create_session_factory  # noqa: E402
@@ -60,6 +61,9 @@ def create_app() -> FastAPI:
     app.include_router(resume_router)
     # Last, because its public GET /{slug} page would otherwise catch other one-segment paths.
     app.include_router(portfolio_router)
+    public_dir = Path(__file__).resolve().parent.parent / "public"
+    if public_dir.is_dir():
+        app.mount("/", StaticFiles(directory=public_dir, html=True), name="frontend")
     return app
 
 
