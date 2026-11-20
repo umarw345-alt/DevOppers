@@ -2,5 +2,5 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "fastapi",
   "buildCommand": "python backend/build_web.py",
-  "outputDirectory": "public"
+  "outputDirectory": ".expo-vercel-build"
 }

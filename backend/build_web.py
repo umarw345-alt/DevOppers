@@ -8,7 +8,6 @@ from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parent
 REPOSITORY_DIR = BACKEND_DIR.parent
-PUBLIC_DIR = REPOSITORY_DIR / "public"
 EXPORT_DIR = REPOSITORY_DIR / ".expo-vercel-build"
 
 
@@ -41,10 +40,6 @@ def main() -> None:
         cwd=REPOSITORY_DIR,
         env=build_env,
     )
-    if PUBLIC_DIR.exists():
-        shutil.rmtree(PUBLIC_DIR)
-    shutil.copytree(EXPORT_DIR, PUBLIC_DIR)
-    shutil.rmtree(EXPORT_DIR)
 
 
 if __name__ == "__main__":
