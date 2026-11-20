@@ -27,10 +27,10 @@ def main() -> None:
     build_env["EXPO_NO_DOTENV"] = "1"
     build_env["EXPO_PUBLIC_API_BASE_URL"] = ""
 
-    # Vercel installs package.json dependencies before running this build.
-    # Keep npm ci for local builds, but avoid installing the same tree twice
-    # in production deployments.
-    if not os.getenv("VERCEL"):
+    # Vercel may not install the Node dependency tree for a FastAPI project.
+    # Install only when Expo is unavailable, so local builds and platforms
+    # that already installed package.json dependencies do not install twice.
+    if not (REPOSITORY_DIR / "node_modules" / "expo" / "package.json").is_file():
         run(command("npm"), "ci", cwd=REPOSITORY_DIR, env=build_env)
     if EXPORT_DIR.exists():
         shutil.rmtree(EXPORT_DIR)
