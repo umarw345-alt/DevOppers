@@ -1,5 +1,5 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { AppState, Platform } from 'react-native';
 
 import {
   AuthClientError,
@@ -30,6 +30,8 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const REFRESH_EVERY_MS = 10 * 60 * 1000;
+
 function getErrorMessage(reason: unknown): string {
   if (reason instanceof AuthClientError) return reason.message;
   return 'Something went wrong. Please try again.';
@@ -41,6 +43,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const signedIn = useRef(false);
+  signedIn.current = status === 'signed_in';
 
   const refreshSession = useCallback(async () => {
     const isWeb = Platform.OS === 'web';
@@ -60,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else if (nextSession.tokens) {
         await saveTokens(nextSession.tokens);
         setAccessToken(nextSession.tokens.accessToken);
-        setUser({ id: '', email: 'Returning user' });
+        setUser((current) => current ?? { id: '', email: 'Returning user' });
       } else {
         throw new Error('Refresh response did not contain tokens.');
       }
@@ -68,6 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setStatus('signed_in');
       setError(null);
     } catch (reason) {
+      // A dropped connection shouldn't sign out someone who is already in; the next renewal tries again.
+      if (signedIn.current && reason instanceof AuthClientError && reason.kind === 'network') return;
       if (isWeb) {
         setUser(null);
         setError(reason instanceof AuthClientError && reason.status === 401 ? null : getErrorMessage(reason));
@@ -85,6 +91,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     refreshSession().catch(() => undefined);
   }, [refreshSession]);
+
+  // Access tokens last ACCESS_TOKEN_TTL_MINUTES (15 by default), so renew them before they run out,
+  // and again when the app comes back to the foreground (timers pause in the background).
+  // The server still ends the session after AFK_TIMEOUT_MINUTES without input.
+  useEffect(() => {
+    if (status !== 'signed_in') return;
+    const timer = setInterval(() => refreshSession().catch(() => undefined), REFRESH_EVERY_MS);
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refreshSession().catch(() => undefined);
+    });
+    return () => {
+      clearInterval(timer);
+      subscription.remove();
+    };
+  }, [status, refreshSession]);
 
   const authenticate = useCallback(async (request: () => ReturnType<typeof loginRequest>) => {
     setIsLoading(true);
@@ -144,13 +165,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await recordInputRequest(accessToken ?? undefined);
     } catch {
-      if (Platform.OS !== 'web') await clearTokens();
-      setAccessToken(null);
-      setUser(null);
-      setStatus('signed_out');
-      setError('Your session has expired. Please sign in again.');
+      // The access token may just have run out; renewing signs the user out only if the session really ended.
+      await refreshSession();
     }
-  }, [accessToken]);
+  }, [accessToken, refreshSession]);
 
   return (
     <AuthContext.Provider
