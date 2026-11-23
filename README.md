@@ -123,30 +123,13 @@ e.g. `http://192.168.1.20:8000`, or a real domain later) and rebuild the API.
 ## Google Wallet setup
 
 Google Wallet cards are free to issue. The server signs each card with a Google Cloud
-service-account key; there is no file to download, the button opens Google's "Add to
-Google Wallet" page. Without this setup everything else works and the button answers 503.
+service-account key and sends the user to Google's "Add to Google Wallet" page. Without
+the setup, everything else works and the Google Wallet button answers 503.
 
-1. **Issuer account.** Go to the [Google Pay & Wallet Console](https://pay.google.com/business/console),
-   sign in with a personal Google account, open **Google Wallet API**, and finish the
-   sign-up (business name: e.g. "Portable Resume"). Copy the **Issuer ID** it shows.
-2. **Service account.** In the [Google Cloud console](https://console.cloud.google.com/):
-   create a project, open **APIs & Services → Library**, enable **Google Wallet API**,
-   then **IAM & Admin → Service Accounts → Create service account** (no roles needed).
-   Open it, **Keys → Add key → Create new key → JSON**, and save the file as
-   `secrets/google-wallet.json`. Never commit it.
-3. **Let the service account issue cards.** Back in the Wallet Console, open **Users**,
-   invite the service account's email (from the JSON, `client_email`) with the
-   **Developer** role.
-4. **Testers.** New issuer accounts are in demo mode: only the account's own users and
-   test accounts can save cards, and card titles show "[TEST ONLY]". Under
-   **Google Wallet API**, add the Google accounts of every phone you'll demo on as test
-   accounts. Anyone else needs Google's approval ("Request publishing access").
-5. **Configure the API.** In `.env`, set `GOOGLE_WALLET_ISSUER_ID` and
-   `GOOGLE_WALLET_KEY_PATH=../secrets/google-wallet.json`, then restart the API.
-
-Google downloads the card's logo from `<site>/google-wallet-logo.png`, so it appears
-only when the site is served over HTTPS (on Vercel, not `localhost`). A saved card
-keeps the name and color it was saved with; the QR code always opens the current page.
+Follow **[docs/google-wallet-setup.md](docs/google-wallet-setup.md)** for the step-by-step
+setup (issuer account, service account, testers, local `.env`, Vercel), troubleshooting
+and known limits. In short, it ends with two settings: `GOOGLE_WALLET_ISSUER_ID`, and the
+key as `GOOGLE_WALLET_KEY_PATH` locally or `GOOGLE_WALLET_KEY_B64` on Vercel.
 
 ## Deploy
 
