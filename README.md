@@ -136,9 +136,9 @@ commit it; Vercel builds it.
 
 - **Migrations:** run `alembic upgrade head` from `backend/` with `DATABASE_URL` set to the
   Neon `DATABASE_URL_UNPOOLED` (from `vercel env pull`). Run it when you deploy code
-  that needs a new migration. Migration history starts at `backend/migrations/versions/baseline.py`;
-  a database that ran the older migrations but stopped before their last one
-  (`005_portfolio_schema_compat`) can't upgrade from there and is easiest to recreate.
+  that needs a new migration. Migration history starts at `backend/migrations/versions/baseline.py`,
+  which keeps the old last revision's ID, so databases that ran the older migrations need nothing.
+  One that stopped before `005_portfolio_schema_compat` can't upgrade and is easiest to recreate.
 - **Secrets** live in Vercel env vars, never in files. Key and certificate files are passed
   base64-encoded as `JWT_PRIVATE_KEY_B64`, `JWT_PUBLIC_KEY_B64`, `PASS_P12_B64` and
   `WWDR_CERT_B64`; `main.py` writes them to temp files at startup.

@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PostgreSQLUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -36,7 +36,11 @@ class Portfolio(Base):
     )
     template_id: Mapped[str] = mapped_column(String(20), nullable=False)
     theme_json: Mapped[dict | None] = mapped_column(JSONB)
+    # Unused: always "published". Kept until a later migration drops these three columns.
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
     public_slug: Mapped[str | None] = mapped_column(String(40), unique=True)
+    artifact_key: Mapped[str | None] = mapped_column(Text)
+    artifact_version: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     resume_record: Mapped[ResumeRecord | None] = relationship(back_populates="portfolios")

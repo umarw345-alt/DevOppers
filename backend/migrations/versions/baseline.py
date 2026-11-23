@@ -73,7 +73,7 @@ def upgrade() -> None:
     )
     op.create_index("ix_resumes_user_id", "resumes", ["user_id"])
 
-    # status, artifact_key and artifact_version are unused; the next migration drops them.
+    # status, artifact_key and artifact_version are unused; a later migration can drop them.
     op.create_table(
         "portfolios",
         sa.Column("id", sa.UUID(), primary_key=True),
