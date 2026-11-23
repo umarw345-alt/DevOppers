@@ -136,14 +136,14 @@ key as `GOOGLE_WALLET_KEY_PATH` locally or `GOOGLE_WALLET_KEY_B64` on Vercel.
 One Vercel project, rooted at the repository root, serves both halves on one address:
 
 - `main.py` (root) is the FastAPI entry point; it loads the app from `backend/`.
-- `vercel.json` runs `backend/build_web.py`, which builds the Expo web app into `public/`.
+- `vercel.json` runs `backend/build_web.py`, which builds the Expo web app into `web/`;
+  FastAPI serves it.
   The build leaves `EXPO_PUBLIC_API_BASE_URL` empty, so the web app calls whatever address
   it was served from. The same build works on any domain.
 - Postgres is a free Neon database added through the Vercel Marketplace.
 
 Connect the Vercel project to this GitHub repository so every push to `main` deploys to
-production and every pull request gets a preview URL. Don't build `public/` locally or
-commit it; Vercel builds it.
+production and every pull request gets a preview URL. Don't commit `web/`; Vercel builds it.
 
 - **Migrations:** run `alembic upgrade head` from `backend/` with `DATABASE_URL` set to the
   Neon `DATABASE_URL_UNPOOLED` (from `vercel env pull`). Run it when you deploy code
