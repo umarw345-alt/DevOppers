@@ -34,6 +34,10 @@ def main() -> None:
         run(command("npm"), "ci", cwd=REPOSITORY_DIR, env=build_env)
     if EXPORT_DIR.exists():
         shutil.rmtree(EXPORT_DIR)
+    # Expo copies everything in public/ into the export, so an old build there
+    # would end up in the new one (the page would load two copies of the app).
+    if PUBLIC_DIR.exists():
+        shutil.rmtree(PUBLIC_DIR)
     run(
         command("npx"),
         "expo",
@@ -45,8 +49,6 @@ def main() -> None:
         cwd=REPOSITORY_DIR,
         env=build_env,
     )
-    if PUBLIC_DIR.exists():
-        shutil.rmtree(PUBLIC_DIR)
     shutil.copytree(EXPORT_DIR, PUBLIC_DIR)
     shutil.rmtree(EXPORT_DIR)
 
