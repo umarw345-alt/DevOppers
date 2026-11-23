@@ -4,7 +4,7 @@ import os
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from auth_service.db import Base
+from auth_service.db import Base, normalize_database_url
 from auth_service import models  # noqa: F401 - registers model metadata
 
 config = context.config
@@ -15,7 +15,7 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    url = os.environ["DATABASE_URL"]
+    url = normalize_database_url(os.environ["DATABASE_URL"])
     context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
     with context.begin_transaction():
         context.run_migrations()
@@ -23,7 +23,7 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = os.environ["DATABASE_URL"]
+    configuration["sqlalchemy.url"] = normalize_database_url(os.environ["DATABASE_URL"])
     connectable = engine_from_config(configuration, prefix="sqlalchemy.", poolclass=pool.NullPool)
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)

@@ -117,7 +117,6 @@ def publish(slug: str, design: Design, request: Request, identity=Depends(access
                 resume_record=resume_record,
                 template_id=design.template_id,
                 theme_json=design.theme.model_dump(mode="json", exclude_none=True),
-                status="published",
                 public_slug=slug,
                 created_at=now,
                 updated_at=now,
@@ -140,7 +139,6 @@ def publish(slug: str, design: Design, request: Request, identity=Depends(access
                 p.resume_record.updated_at = now
             p.template_id = design.template_id
             p.theme_json = design.theme.model_dump(mode="json", exclude_none=True)
-            p.status = "published"
             p.updated_at = now
         try:
             db.commit()
