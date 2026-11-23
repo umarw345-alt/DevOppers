@@ -8,7 +8,7 @@ import httpx2
 import pytest
 from fastapi.testclient import TestClient
 
-from auth_service.fastapi_routes import access_identity
+from auth_service.dependencies import access_identity
 from auth_service.rate_limit import LoginRateLimiter
 from main import app
 from portfolio.schema import Resume
@@ -87,7 +87,7 @@ def test_empty_file(fake):
 
 
 def test_file_over_10_mb(fake):
-    assert upload(b"%PDF" + b"0" * (10 * 1024 * 1024)).status_code == 413
+    assert upload(b"%PDF" + b"0" * (4 * 1024 * 1024)).status_code == 413
     assert fake.calls == []
 
 

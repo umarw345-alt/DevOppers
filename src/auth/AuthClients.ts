@@ -1,9 +1,6 @@
 import type { StoredTokens } from './AuthStorage';
 import { Platform } from 'react-native';
-
-declare const process: { env: { EXPO_PUBLIC_API_BASE_URL?: string } };
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ?? 'http://10.0.2.2:8000';
+import { getApiBaseUrl } from './ApiBaseUrl';
 
 export type AuthUser = { id: string; email: string };
 
@@ -49,7 +46,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const csrfToken = isWeb ? getWebCsrfToken() : undefined;
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
+    response = await fetch(`${getApiBaseUrl()}${path}`, {
       ...init,
       credentials: isWeb ? 'include' : 'omit',
       headers: {

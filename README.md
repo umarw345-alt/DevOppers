@@ -1,15 +1,15 @@
 # Portable Resume
 
 A student uploads a resume, checks what was read from it, and publishes it as a
-portfolio website at its own link (`PUBLIC_BASE_URL/<name>`, e.g. `abcd.com/jerry`).
-The Apple Wallet card's QR code opens that link, so a recruiter scans it with no app
+portfolio website at its own link (`<site>/<name>`, e.g. `devoppers.vercel.app/jerry`).
+The Wallet card's QR code (Apple Wallet or Google Wallet) opens that link, so a recruiter scans it with no app
 and no login. Editing the portfolio later never needs a new card.
 
 1. Log in or create an account (email + password).
 2. **Upload resume** (PDF/JPG/PNG, read by Claude) or **Start blank**.
 3. Fix the details, hide your phone/email/location if you like, pick a template and color.
 4. **Publish**. Your page is live at the link shown.
-5. On your iPhone, tap **Add to Apple Wallet**.
+5. On your phone, tap **Add to Apple Wallet** (iPhone) or **Add to Google Wallet** (Android).
 
 ## Architecture
 
@@ -120,23 +120,47 @@ The pass type and team IDs are read from the certificate. To scan the QR code fr
 phone, set `PUBLIC_BASE_URL` to an address the phone can reach (your computer's LAN IP,
 e.g. `http://192.168.1.20:8000`, or a real domain later) and rebuild the API.
 
-## Deploy (live at https://devoppers.vercel.app)
+## Google Wallet setup
 
-One Vercel project (`devoppers`, rooted at `backend/`) runs the FastAPI app; the Expo web
-build is copied into `backend/public/` and served from Vercel's CDN on the same address.
-Postgres is a free Neon database added through the Vercel Marketplace.
+Google Wallet cards are free to issue. The server signs each card with a Google Cloud
+service-account key and sends the user to Google's "Add to Google Wallet" page. Without
+the setup, everything else works and the Google Wallet button answers 503.
 
-```sh
-./scripts/deploy-vercel.sh        # build the web app and deploy to production
-```
+Follow **[docs/google-wallet-setup.md](docs/google-wallet-setup.md)** for the step-by-step
+setup (issuer account, service account, testers, local `.env`, Vercel), troubleshooting
+and known limits. In short, it ends with two settings: `GOOGLE_WALLET_ISSUER_ID`, and the
+key as `GOOGLE_WALLET_KEY_PATH` locally or `GOOGLE_WALLET_KEY_B64` on Vercel.
+
+## Deploy
+
+One Vercel project, rooted at the repository root, serves both halves on one address:
+
+- `main.py` (root) is the FastAPI entry point; it loads the app from `backend/`.
+- `vercel.json` runs `backend/build_web.py`, which builds the Expo web app into `public/`.
+  The build leaves `EXPO_PUBLIC_API_BASE_URL` empty, so the web app calls whatever address
+  it was served from. The same build works on any domain.
+- Postgres is a free Neon database added through the Vercel Marketplace.
+
+Connect the Vercel project to this GitHub repository so every push to `main` deploys to
+production and every pull request gets a preview URL. Don't build `public/` locally or
+commit it; Vercel builds it.
 
 - **Migrations:** run `alembic upgrade head` from `backend/` with `DATABASE_URL` set to the
-  Neon `DATABASE_URL_UNPOOLED` (in `backend/.env.local` after `vercel env pull`).
+  Neon `DATABASE_URL_UNPOOLED` (from `vercel env pull`). Run it when you deploy code
+  that needs a new migration. Migration history starts at `backend/migrations/versions/baseline.py`,
+  which keeps the old last revision's ID, so databases that ran the older migrations need nothing.
+  One that stopped before `005_portfolio_schema_compat` can't upgrade and is easiest to recreate.
 - **Secrets** live in Vercel env vars, never in files. Key and certificate files are passed
-  base64-encoded as `JWT_PRIVATE_KEY_B64`, `JWT_PUBLIC_KEY_B64`, `PASS_P12_B64` and
-  `WWDR_CERT_B64`; `main.py` writes them to temp files at startup.
-- Other production settings: `ANTHROPIC_API_KEY`, `PUBLIC_BASE_URL`, `CORS_ALLOWED_ORIGINS`,
-  `WEB_COOKIE_SECURE=true`, and `DAILY_UPLOAD_CAP` (site-wide resume reads per 24 hours, default 200).
+  base64-encoded as `JWT_PRIVATE_KEY_B64`, `JWT_PUBLIC_KEY_B64`, `PASS_P12_B64`,
+  `WWDR_CERT_B64` and `GOOGLE_WALLET_KEY_B64`; `main.py` writes them to temp files at startup.
+- **Other env vars:** `DATABASE_URL`, `ANTHROPIC_API_KEY`, `PASS_P12_PASSWORD`, `GOOGLE_WALLET_ISSUER_ID`, and optionally
+  `DAILY_UPLOAD_CAP` (site-wide resume reads per 24 hours, default 200). Google sign-in
+  needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OIDC_STATE_SECRET`,
+  `GOOGLE_REDIRECT_URI` (`https://<site>/v1/auth/google/callback`, also registered in the
+  Google Cloud console) and `GOOGLE_FRONTEND_REDIRECT_URI` (`https://<site>`). Portfolio links
+  use the site's own address and cookies are Secure on Vercel automatically, so
+  `PUBLIC_BASE_URL` and `WEB_COOKIE_SECURE` aren't needed. `CORS_ALLOWED_ORIGINS` is only
+  needed if the web app is served from a different address than the API.
 - Vercel caps request bodies at 4.5 MB, so the app accepts resumes up to 4 MB.
 
 ## Run the web app
@@ -249,6 +273,8 @@ PUT    /portfolios/{slug}         publish or update (login required)
 DELETE /portfolios/{slug}         (login required)
 GET    /{slug}                    public portfolio page
 GET    /{slug}/pass.pkpass        Apple Wallet pass
+GET    /{slug}/google-wallet      redirect to Google's "Add to Google Wallet" page
+GET    /google-wallet-logo.png    card logo Google downloads
 ```
 
 ## Troubleshooting

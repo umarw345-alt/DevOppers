@@ -98,5 +98,9 @@ web-build/
 TODAY_PROGRESS.local.md
 CODE_REVIEW.local.md
 
-# Web build copied into the API for Vercel (scripts/deploy-vercel.sh)
+# Web build generated for the combined Vercel deployment
+/public/
 /backend/public/
+/.expo-vercel-build/
+.vercel
+.env*

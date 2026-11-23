@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { Draft, EMPTY_RESUME, Portfolio, TEMPLATES, deletePortfolio, extractResume, listPortfolios } from '../api';
-import { Button, C, Page, Steps, T, useWide } from '../theme';
+import { Button, C, Page, Steps, T, WalletButtons, useWide } from '../theme';
 
 const READING = ['Reading your resume…', 'Finding your experience…', 'Organizing your skills…', 'Almost done…'];
 const blank: Draft = { resume: EMPTY_RESUME, template_id: 'modern', theme: {} };
@@ -88,7 +88,7 @@ export default function Home({ token, email, onOpen, onLogout }: Props) {
       {!!portfolios?.length && (
         <>
           <Text style={T.title}>Your portfolios</Text>
-          <Text style={T.dim}>Share the link, or add the card to Apple Wallet for career fairs.</Text>
+          <Text style={T.dim}>Share the link, or add the card to Apple Wallet or Google Wallet for career fairs.</Text>
           {actions}
           <View style={{ flexDirection: wide ? 'row' : 'column', flexWrap: 'wrap', gap: 12, marginTop: 28 }}>
             {portfolios.map((p) => (
@@ -100,7 +100,7 @@ export default function Home({ token, email, onOpen, onLogout }: Props) {
                 {!!p.resume.headline && <Text style={T.dim}>{p.resume.headline}</Text>}
                 <Text selectable style={{ color: C.link, fontSize: 14 }}>{p.url}</Text>
                 <View style={[T.row, { marginTop: 8 }]}>
-                  <Button small label="Add to Apple Wallet" onPress={() => Linking.openURL(`${p.url}/pass.pkpass`)} />
+                  <WalletButtons small url={p.url} />
                   <Button small kind="secondary" label="View site" onPress={() => Linking.openURL(p.url)} />
                   <Button small kind="secondary" label="Edit" onPress={() => onOpen(p)} />
                   <Button small kind="ghost" label={confirmDelete === p.slug ? 'Tap again to delete' : 'Delete'} onPress={() => remove(p.slug)} />

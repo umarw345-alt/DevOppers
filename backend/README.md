@@ -72,7 +72,7 @@ Restart it to see template changes.
 
 - Needs `ANTHROPIC_API_KEY` in the root `.env`; without it the endpoint returns 503.
 - Defaults to `claude-haiku-5-5` at medium effort (about $0.001 per resume). Override with `ANTHROPIC_MODEL` / `ANTHROPIC_EFFORT`.
-- Limits: 10 MB per file, 10 uploads per user per 10 minutes.
+- Limits: 4 MB per file (Vercel's request limit is 4.5 MB), 10 uploads per user per 10 minutes.
 
 `evals/resume_extraction/` compares models on synthetic resumes with known answers (costs real money; Haiku is about $0.01 a run):
 

@@ -4,7 +4,7 @@ import { Button, C, Page, Steps, T, WalletCard, useWide } from '../theme';
 
 const FEATURES = [
   ['A real website', 'Your resume becomes a clean portfolio page with its own link. Four designs, any accent color.'],
-  ['An Apple Wallet card', 'Your name, title and a QR code, one swipe away. No app to install, nothing to print.'],
+  ['A Wallet card', 'Your name, title and a QR code in Apple Wallet or Google Wallet. No app to install, nothing to print.'],
   ['You decide what is public', 'Hide your phone, email or location. Edit any time and the same QR code shows the update.'],
 ];
 
@@ -12,7 +12,7 @@ const FAQ = [
   ['Is it free?', 'Yes. Make an account with your email and you are done.'],
   ['Do recruiters need an app?', 'No. They point their phone camera at the QR code and your page opens.'],
   ['What files work?', 'PDF, JPG or PNG up to 4 MB. No resume yet? Start blank and type it in.'],
-  ['Does it work on Android?', 'Your website works everywhere. The Wallet card is for iPhone for now.'],
+  ['Does it work on Android?', 'Yes. Android phones get the card in Google Wallet, iPhones in Apple Wallet.'],
 ];
 
 export default function Landing({ onSignUp, onLogIn }: { onSignUp: () => void; onLogIn: () => void }) {
@@ -30,7 +30,7 @@ export default function Landing({ onSignUp, onLogIn }: { onSignUp: () => void; o
           <Text style={T.overline}>FOR STUDENTS AT CAREER FAIRS</Text>
           <Text style={[T.title, { fontSize: wide ? 56 : 40, lineHeight: wide ? 62 : 46 }]}>Your resume as a website and a Wallet card.</Text>
           <Text style={[T.dim, { fontSize: 18, lineHeight: 28, marginTop: 16, maxWidth: 520 }]}>
-            Upload your resume once. We turn it into a portfolio page and an Apple Wallet card with a QR code. Recruiters scan
+            Upload your resume once. We turn it into a portfolio page and a Wallet card (Apple or Google) with a QR code. Recruiters scan
             it and see everything.
           </Text>
           <View style={[T.row, { marginTop: 28 }]}>

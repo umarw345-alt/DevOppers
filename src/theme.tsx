@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import QRCode from 'qrcode';
 
@@ -125,7 +125,28 @@ export function QR({ value, size = 132 }: { value: string; size?: number }) {
   );
 }
 
-// What the Apple Wallet card looks like; the QR code opens the portfolio.
+// Which wallets to offer: iPhones get Apple, Android gets Google, desktop browsers get both.
+export function wallets(): ('apple' | 'google')[] {
+  if (Platform.OS === 'ios') return ['apple'];
+  if (Platform.OS === 'android') return ['google'];
+  const agent = (globalThis as { navigator?: { userAgent?: string } }).navigator?.userAgent ?? '';
+  if (/iPhone|iPad|iPod/.test(agent)) return ['apple'];
+  if (/Android/.test(agent)) return ['google'];
+  return ['apple', 'google'];
+}
+
+// "Add to ... Wallet" buttons for a published portfolio at `url`.
+export function WalletButtons({ url, small }: { url: string; small?: boolean }) {
+  return (
+    <>
+      {wallets().map((wallet) => wallet === 'apple'
+        ? <Button key="apple" small={small} label="Add to Apple Wallet" onPress={() => Linking.openURL(`${url}/pass.pkpass`)} />
+        : <Button key="google" small={small} label="Add to Google Wallet" onPress={() => Linking.openURL(`${url}/google-wallet`)} />)}
+    </>
+  );
+}
+
+// What the Wallet card looks like; the QR code opens the portfolio.
 export function WalletCard({ name, headline, color, url }: { name: string; headline?: string; color: string; url: string }) {
   const n = parseInt(color.slice(1), 16);
   const ink = ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 150 ? '#000000' : '#FFFFFF';
@@ -147,7 +168,7 @@ export function WalletCard({ name, headline, color, url }: { name: string; headl
 export const STEPS = [
   ['Upload your resume', 'A PDF or a photo. We read it and fill everything in for you.'],
   ['Check it and publish', 'Fix anything, choose a design, and get your own link.'],
-  ['Add it to Apple Wallet', 'Show the card at a career fair. Recruiters scan it with their camera.'],
+  ['Add it to your Wallet', 'Apple Wallet or Google Wallet. Show the card at a career fair; recruiters scan it with their camera.'],
 ];
 
 export function Steps({ active }: { active?: number }) {

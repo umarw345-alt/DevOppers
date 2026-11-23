@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s - %(
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 # Hosts without secret files (Vercel) pass each one base64-encoded as <NAME>_B64; write it out and point <NAME>_PATH at it.
-for name in ("JWT_PRIVATE_KEY", "JWT_PUBLIC_KEY", "PASS_P12", "WWDR_CERT"):
+for name in ("JWT_PRIVATE_KEY", "JWT_PUBLIC_KEY", "PASS_P12", "WWDR_CERT", "GOOGLE_WALLET_KEY"):
     if encoded := os.getenv(f"{name}_B64"):
         secret = Path(tempfile.gettempdir()) / name.lower()
         secret.write_bytes(base64.b64decode(encoded))
@@ -24,10 +24,12 @@ for name in ("JWT_PRIVATE_KEY", "JWT_PUBLIC_KEY", "PASS_P12", "WWDR_CERT"):
 
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 from auth_service.config import load_settings  # noqa: E402
-from auth_service.db import create_session_factory  # noqa: E402
+from database import create_session_factory  # noqa: E402
 from auth_service.fastapi_routes import router as auth_router  # noqa: E402
+from auth_service.google_routes import router as google_router  # noqa: E402
 from auth_service.rate_limit import LoginRateLimiter  # noqa: E402
 from portfolio.routes import router as portfolio_router  # noqa: E402
 from resume.routes import router as resume_router  # noqa: E402
@@ -51,13 +53,17 @@ def create_app() -> FastAPI:
         allow_headers=["Authorization", "Content-Type", "Accept", "X-Client-Platform", "X-CSRF-Token"],
     )
     # /health and /v1/auth/* (register, login, refresh, logout, input).
-    # Use auth_service.fastapi_routes.access_identity to require a login on other routes.
+    # Other routes require a login with auth_service.dependencies.current_user_id.
     app.include_router(auth_router, tags=["auth"])
+    app.include_router(google_router, tags=["auth"])
     # Each upload is a paid Claude call, so cap it per user: 10 uploads per 10 minutes.
     app.state.upload_rate_limiter = LoginRateLimiter(10, 600)
     app.include_router(resume_router)
     # Last, because its public GET /{slug} page would otherwise catch other one-segment paths.
     app.include_router(portfolio_router)
+    public_dir = Path(__file__).resolve().parent.parent / "public"
+    if public_dir.is_dir():
+        app.mount("/", StaticFiles(directory=public_dir, html=True), name="frontend")
     return app
 
 

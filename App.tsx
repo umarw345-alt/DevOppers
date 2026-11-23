@@ -43,7 +43,8 @@ function App() {
       ? <Auth key={authMode} mode={authMode} error={error} isLoading={isLoading} onLogin={login} onRegister={register} onSwitch={clearError} onBack={() => { clearError(); setAuthMode(null); }} />
       : <Landing onSignUp={() => setAuthMode('register')} onLogIn={() => setAuthMode('login')} />
   ) : (
-    <View style={{ flex: 1 }} onTouchStart={onTouch}>
+    // Touch on phones, mouse/pen clicks on the web.
+    <View style={{ flex: 1 }} onTouchStart={onTouch} onPointerDown={onTouch}>
       {draft
         ? <Editor token={accessToken} draft={draft} onClose={() => setDraft(null)} />
         : <Home token={accessToken} email={user?.email} onOpen={setDraft} onLogout={() => { setDraft(null); setAuthMode(null); logout(); }} />}

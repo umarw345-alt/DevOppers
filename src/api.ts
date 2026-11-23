@@ -1,11 +1,9 @@
 import { Platform } from 'react-native';
 import { getWebCsrfToken } from './auth/AuthClients';
-
-declare const process: { env: { EXPO_PUBLIC_API_BASE_URL?: string } };
+import { getApiBaseUrl } from './auth/ApiBaseUrl';
 
 const isWeb = Platform.OS === 'web';
-// The Android emulator reaches your computer at 10.0.2.2.
-const API = (process.env.EXPO_PUBLIC_API_BASE_URL || `http://${Platform.OS === 'android' ? '10.0.2.2' : 'localhost'}:8000`).replace(/\/+$/, '');
+const API = getApiBaseUrl();
 
 // The edit form works on flat strings: skills are comma separated, bullets are one per line.
 export type Entry = { organization: string; title: string; start: string; end: string; bullets: string };
@@ -19,7 +17,7 @@ export type Theme = { accent?: string; font?: string };
 export type Draft = { slug?: string; resume: Resume; template_id: string; theme: Theme };
 export type Portfolio = Draft & { slug: string; url: string };
 
-// Template -> its default accent color (backend/portfolio/themes.py)
+// Template -> its default accent color. Must match backend/portfolio/themes.py (checked by backend/tests/unit/test_frontend_templates.py).
 export const TEMPLATES: Record<string, string> = { modern: '#1e3a8a', classic: '#8b2e2e', minimal: '#b4321f', dark: '#fbbf24' };
 export const EMPTY_ENTRY: Entry = { organization: '', title: '', start: '', end: '', bullets: '' };
 export const EMPTY_RESUME: Resume = {
