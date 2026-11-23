@@ -38,7 +38,7 @@ export class AuthClientError extends Error {
   }
 }
 
-function getWebCsrfToken(): string | undefined {
+export function getWebCsrfToken(): string | undefined {
   const browser = (globalThis as typeof globalThis & { document?: { cookie: string } }).document;
   const cookie = browser?.cookie.split('; ').find((entry) => entry.startsWith('auth_csrf_token='));
   return cookie ? decodeURIComponent(cookie.slice('auth_csrf_token='.length)) : undefined;

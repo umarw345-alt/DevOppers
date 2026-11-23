@@ -28,13 +28,13 @@ def make_opener():
     return build_opener(HTTPCookieProcessor(jar)), jar
 
 
-def send(opener, path, *, payload=None, headers=None):
+def send(opener, path, *, payload=None, headers=None, method=None):
     body = None if payload is None else json.dumps(payload).encode("utf-8")
     request = Request(
         f"{BASE_URL}{path}",
         data=body,
         headers={"Accept": "application/json", **(headers or {})},
-        method="POST" if path != "/health" else "GET",
+        method=method or ("POST" if path != "/health" else "GET"),
     )
     try:
         response = opener.open(request, timeout=10)
@@ -361,3 +361,19 @@ def test_malformed_access_jwt_is_rejected(malformed_token):
 
     assert status == 401
     assert body["detail"] == "Unauthorized"
+
+
+def test_published_portfolio_is_public_and_only_its_owner_can_change_it():
+    opener, _ = make_opener()
+    owner, stranger = (
+        {**native_headers(), "Authorization": f"Bearer {send(opener, '/v1/auth/register', payload=credentials(), headers=native_headers())[1]['access_token']}"}
+        for _ in range(2)
+    )
+    slug = f"it-{uuid4().hex[:12]}"
+    portfolio = {"resume": {"contact": {"name": "Ada Lovelace"}}, "template_id": "classic"}
+
+    assert send(opener, f"/portfolios/{slug}", payload=portfolio, headers=owner, method="PUT")[0] == 200
+    assert send(opener, f"/portfolios/{slug}", payload=portfolio, headers=stranger, method="PUT")[0] == 409
+    assert "Ada Lovelace" in opener.open(f"{BASE_URL}/{slug}", timeout=10).read().decode()
+    assert send(opener, f"/portfolios/{slug}", headers=stranger, method="DELETE")[0] == 404
+    assert send(opener, f"/portfolios/{slug}", headers=owner, method="DELETE")[0] == 204

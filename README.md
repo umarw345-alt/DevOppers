@@ -1,6 +1,15 @@
-# Login Authenticator
+# Portable Resume
 
-Allows for users to login or register an account to access the main application.
+A student uploads a resume, checks what was read from it, and publishes it as a
+portfolio website at its own link (`PUBLIC_BASE_URL/<name>`, e.g. `abcd.com/jerry`).
+The Apple Wallet card's QR code opens that link, so a recruiter scans it with no app
+and no login. Editing the portfolio later never needs a new card.
+
+1. Log in or create an account (email + password).
+2. **Upload resume** (PDF/JPG/PNG, read by Claude) or **Start blank**.
+3. Fix the details, hide your phone/email/location if you like, pick a template and color.
+4. **Publish**. Your page is live at the link shown.
+5. On your iPhone, tap **Add to Apple Wallet**.
 
 ## Architecture
 
@@ -95,6 +104,40 @@ Stop the backend stack:
 ```powershell
 docker compose down
 ```
+
+## Apple Wallet setup
+
+Passes are signed with your Apple Developer **Pass Type ID** certificate. Without it
+everything else works and the Wallet button answers 503.
+
+1. In Keychain Access, export the Pass Type ID certificate *with its private key* as
+   `secrets/pass.p12` (put its password in `.env` as `PASS_P12_PASSWORD`).
+2. Download Apple's [WWDR G4 certificate](https://www.apple.com/certificateauthority/AppleWWDRCAG4.cer)
+   as `secrets/wwdr.cer`.
+3. `docker compose up -d --build api`.
+
+The pass type and team IDs are read from the certificate. To scan the QR code from a
+phone, set `PUBLIC_BASE_URL` to an address the phone can reach (your computer's LAN IP,
+e.g. `http://192.168.1.20:8000`, or a real domain later) and rebuild the API.
+
+## Deploy (live at https://devoppers.vercel.app)
+
+One Vercel project (`devoppers`, rooted at `backend/`) runs the FastAPI app; the Expo web
+build is copied into `backend/public/` and served from Vercel's CDN on the same address.
+Postgres is a free Neon database added through the Vercel Marketplace.
+
+```sh
+./scripts/deploy-vercel.sh        # build the web app and deploy to production
+```
+
+- **Migrations:** run `alembic upgrade head` from `backend/` with `DATABASE_URL` set to the
+  Neon `DATABASE_URL_UNPOOLED` (in `backend/.env.local` after `vercel env pull`).
+- **Secrets** live in Vercel env vars, never in files. Key and certificate files are passed
+  base64-encoded as `JWT_PRIVATE_KEY_B64`, `JWT_PUBLIC_KEY_B64`, `PASS_P12_B64` and
+  `WWDR_CERT_B64`; `main.py` writes them to temp files at startup.
+- Other production settings: `ANTHROPIC_API_KEY`, `PUBLIC_BASE_URL`, `CORS_ALLOWED_ORIGINS`,
+  `WEB_COOKIE_SECURE=true`, and `DAILY_UPLOAD_CAP` (site-wide resume reads per 24 hours, default 200).
+- Vercel caps request bodies at 4.5 MB, so the app accepts resumes up to 4 MB.
 
 ## Run the web app
 
@@ -192,16 +235,20 @@ Run the full authentication integration tests against the running Docker service
 
 These tests send real requests to FastAPI and PostgreSQL. They are opt-in because Docker Desktop and the migrated database must be running first.
 
-## Authentication endpoints
+## Endpoints
 
-FastAPI serves these routes on port `8000`:
+FastAPI serves these routes on port `8000` (interactive docs at `/docs`):
 
 ```text
-POST /v1/auth/register
-POST /v1/auth/login
-POST /v1/auth/refresh
-POST /v1/auth/logout
-POST /v1/auth/input
+POST   /v1/auth/register | login | refresh | logout | input
+POST   /resume/upload             resume file -> Resume JSON (login required)
+GET    /portfolio/templates
+POST   /portfolio/preview         Resume + design -> HTML, not saved
+GET    /portfolios                your portfolios (login required)
+PUT    /portfolios/{slug}         publish or update (login required)
+DELETE /portfolios/{slug}         (login required)
+GET    /{slug}                    public portfolio page
+GET    /{slug}/pass.pkpass        Apple Wallet pass
 ```
 
 ## Troubleshooting
@@ -220,4 +267,3 @@ npx expo start --clear --port 8081
 
 If the API cannot be reached, confirm it is running on port `8000` (`docker compose ps` or the `uv run fastapi dev` terminal) and that the Android emulator is using `10.0.2.2` rather than `localhost`.
 
-# DevOppers
