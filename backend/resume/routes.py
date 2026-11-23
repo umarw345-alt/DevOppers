@@ -18,7 +18,8 @@ from resume.extractor import ExtractionError, extract_resume
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["resume"])
 
-MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+# Vercel rejects request bodies over 4.5 MB before they reach the app, so stay under that.
+MAX_UPLOAD_BYTES = 4 * 1024 * 1024
 DAILY_UPLOAD_CAP = int(os.getenv("DAILY_UPLOAD_CAP", "200"))
 # Identify the file by its first bytes; the client's content type can't be trusted.
 SIGNATURES = {b"%PDF": "application/pdf", b"\xff\xd8\xff": "image/jpeg", b"\x89PNG": "image/png"}
@@ -68,7 +69,7 @@ def upload_resume(
     if not data:
         raise HTTPException(status_code=400, detail="The file is empty.")
     if len(data) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=413, detail="The file is over 10 MB.")
+        raise HTTPException(status_code=413, detail="The file is over 4 MB.")
     mime_type = detect_type(data)
     if mime_type is None:
         raise HTTPException(status_code=415, detail="Upload a PDF, JPEG, or PNG.")

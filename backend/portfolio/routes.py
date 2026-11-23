@@ -31,16 +31,25 @@ class Design(BaseModel):
     theme: Theme = Theme()
 
 
-def public_url(slug: str) -> str:
-    """e.g. https://abcd.com/jerry once PUBLIC_BASE_URL points at a real domain."""
-    return f"{os.getenv('PUBLIC_BASE_URL', 'http://localhost:8000').rstrip('/')}/{slug}"
+def public_url(request: Request, slug: str) -> str:
+    """The portfolio's public link, e.g. https://devoppers.vercel.app/jerry.
+
+    Built from the address this request came in on, so every deployment links to itself.
+    Set PUBLIC_BASE_URL to override it, e.g. your computer's LAN address so a phone can scan the QR code.
+    """
+    base = os.getenv("PUBLIC_BASE_URL")
+    if not base:
+        scheme = request.headers.get("x-forwarded-proto", request.url.scheme)
+        host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+        base = f"{scheme}://{host}"
+    return f"{base.rstrip('/')}/{slug}"
 
 
-def to_json(p: Portfolio) -> dict:
+def to_json(request: Request, p: Portfolio) -> dict:
     slug = p.public_slug
     return {
         "slug": slug,
-        "url": public_url(slug),
+        "url": public_url(request, slug),
         "resume": p.resume_record.resume_json if p.resume_record else {},
         "template_id": p.template_id,
         "theme": p.theme_json or {},
@@ -81,7 +90,7 @@ def list_mine(request: Request, identity=Depends(access_identity)):
             .where(Portfolio.user_id == identity[0])
             .order_by(Portfolio.updated_at.desc())
         )
-        return [to_json(p) for p in rows]
+        return [to_json(request, p) for p in rows]
 
 
 @router.put("/portfolios/{slug}")
@@ -137,7 +146,7 @@ def publish(slug: str, design: Design, request: Request, identity=Depends(access
             db.commit()
         except IntegrityError:
             raise HTTPException(status_code=409, detail="That link is taken. Try another.")
-        return to_json(p)
+        return to_json(request, p)
 
 
 @router.delete("/portfolios/{slug}", status_code=204)
@@ -178,7 +187,7 @@ def wallet_pass(slug: str, request: Request):
             serial=slug,
             name=design.resume.contact.name,
             headline=design.resume.contact.headline,
-            url=public_url(slug),
+            url=public_url(request, slug),
             color=resolve_theme(design.template_id, design.theme).accent,
         )
     except PassError as error:

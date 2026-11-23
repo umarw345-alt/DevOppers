@@ -63,7 +63,8 @@ def load_settings() -> Settings:
             for origin in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
             if origin.strip()
         ),
-        web_cookie_secure=_bool_env("WEB_COOKIE_SECURE", False),
+        # Vercel serves only HTTPS and sets VERCEL=1, so cookies are Secure there unless overridden.
+        web_cookie_secure=_bool_env("WEB_COOKIE_SECURE", bool(os.getenv("VERCEL"))),
         web_cookie_samesite=os.getenv("WEB_COOKIE_SAMESITE", "lax"),
         google_client_id=os.getenv("GOOGLE_CLIENT_ID") or None,
         google_client_secret=os.getenv("GOOGLE_CLIENT_SECRET") or None,

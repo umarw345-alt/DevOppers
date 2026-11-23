@@ -87,7 +87,7 @@ def test_empty_file(fake):
 
 
 def test_file_over_10_mb(fake):
-    assert upload(b"%PDF" + b"0" * (10 * 1024 * 1024)).status_code == 413
+    assert upload(b"%PDF" + b"0" * (4 * 1024 * 1024)).status_code == 413
     assert fake.calls == []
 
 
