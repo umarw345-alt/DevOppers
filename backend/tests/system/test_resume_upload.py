@@ -8,7 +8,7 @@ import httpx2
 import pytest
 from fastapi.testclient import TestClient
 
-from auth_service.fastapi_routes import access_identity
+from auth_service.dependencies import access_identity
 from auth_service.rate_limit import LoginRateLimiter
 from main import app
 from portfolio.schema import Resume

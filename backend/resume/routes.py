@@ -3,17 +3,19 @@
 import logging
 import os
 from datetime import timedelta
+from uuid import UUID
 from typing import Annotated
 
 import anthropic
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile
 from sqlalchemy import func, select
 
-from auth_service.fastapi_routes import _db, _require_csrf, access_identity
-from auth_service.models import ResumeUpload
+from auth_service.dependencies import current_user_id, require_csrf
 from auth_service.security import utc_now
+from database import open_db
 from portfolio.schema import Resume
 from resume.extractor import ExtractionError, extract_resume
+from resume.models import ResumeUpload
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["resume"])
@@ -35,9 +37,9 @@ def get_anthropic_client(request: Request) -> anthropic.Anthropic:
     return client
 
 
-def spend_daily_upload(request: Request, user_id) -> None:
+def spend_daily_upload(request: Request, user_id: UUID) -> None:
     """Every upload is a paid Claude call, so the whole site gets DAILY_UPLOAD_CAP per 24 hours."""
-    with _db(request) as db:
+    with open_db(request) as db:
         used = db.scalar(select(func.count()).select_from(ResumeUpload).where(ResumeUpload.created_at > utc_now() - timedelta(days=1)))
         if used >= DAILY_UPLOAD_CAP:
             raise HTTPException(status_code=429, detail="Resume reading is at today's limit. Start blank and type it in, or try tomorrow.")
@@ -53,15 +55,14 @@ def detect_type(data: bytes) -> str | None:
 def upload_resume(
     file: UploadFile,
     request: Request,
-    identity=Depends(access_identity),
+    user_id: Annotated[UUID, Depends(current_user_id)],
     client: Annotated[anthropic.Anthropic, Depends(get_anthropic_client)] = None,
 ) -> Resume:
     """Read the uploaded resume with Claude and return it as Resume JSON for the user to review.
 
     Nothing is saved: the app shows the result in its edit form.
     """
-    _require_csrf(request)
-    user_id, _ = identity
+    require_csrf(request)
     if not request.app.state.upload_rate_limiter.allow(str(user_id)):
         raise HTTPException(status_code=429, detail="Too many uploads. Try again in a few minutes.")
 

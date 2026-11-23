@@ -4,8 +4,10 @@ import os
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from auth_service.db import Base, normalize_database_url
-from auth_service import models  # noqa: F401 - registers model metadata
+from database import Base, normalize_database_url
+from auth_service import models as _auth_models  # noqa: F401 - registers each table
+from portfolio import models as _portfolio_models  # noqa: F401
+from resume import models as _resume_models  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

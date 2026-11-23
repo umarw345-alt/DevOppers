@@ -1,18 +1,18 @@
 from datetime import timedelta
-from hmac import compare_digest
 import secrets
-from typing import Annotated
 from uuid import UUID, uuid4
 
-import jwt
 from argon2.exceptions import InvalidHashError, VerifyMismatchError
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 
+from database import open_db
+
+from .dependencies import ACCESS_COOKIE, CSRF_COOKIE, REFRESH_COOKIE, access_identity, is_web_request, require_csrf
 from .models import Session, User
-from .security import build_password_hasher, create_access_token, decode_access_token, hash_refresh_token, new_refresh_token, utc_now
+from .security import build_password_hasher, create_access_token, hash_refresh_token, new_refresh_token, utc_now
 
 router = APIRouter()
 
@@ -44,17 +44,8 @@ class WebAuthResponse(BaseModel):
     user: UserResponse
 
 
-ACCESS_COOKIE = "auth_access_token"
-REFRESH_COOKIE = "auth_refresh_token"
-CSRF_COOKIE = "auth_csrf_token"
-
-
 def _normalize_email(email: str) -> str:
     return email.strip().lower()
-
-
-def _db(request: Request):
-    return request.app.state.db_session_factory()
 
 
 def _create_session(request: Request, db, user_id: UUID, token_family_id: UUID | None = None):
@@ -73,10 +64,6 @@ def _create_session(request: Request, db, user_id: UUID, token_family_id: UUID |
     )
     db.add(session)
     return session, refresh_token
-
-
-def _is_web_request(request: Request) -> bool:
-    return request.headers.get("x-client-platform", "").lower() == "web"
 
 
 def _set_auth_cookies(request: Request, response: Response, access_token: str, refresh_token: str) -> None:
@@ -98,14 +85,6 @@ def _clear_auth_cookies(response: Response) -> None:
     response.delete_cookie(CSRF_COOKIE, path="/")
 
 
-def _require_csrf(request: Request) -> None:
-    if _is_web_request(request):
-        cookie_token = request.cookies.get(CSRF_COOKIE, "")
-        header_token = request.headers.get("x-csrf-token", "")
-        if not cookie_token or not header_token or not compare_digest(cookie_token, header_token):
-            raise HTTPException(status_code=403, detail="Invalid CSRF token")
-
-
 def _auth_response(
     request: Request,
     response: Response,
@@ -115,7 +94,7 @@ def _auth_response(
     web: bool | None = None,
 ):
     access_token = create_access_token(request.app.state.settings, user.id, session.id)
-    if (_is_web_request(request) if web is None else web):
+    if (is_web_request(request) if web is None else web):
         _set_auth_cookies(request, response, access_token, refresh_token)
         return WebAuthResponse(user=UserResponse(id=user.id, email=user.email))
     return AuthResponse(
@@ -123,35 +102,6 @@ def _auth_response(
         access_token=access_token,
         refresh_token=refresh_token,
     )
-
-
-def _identity(request: Request, authorization: str | None):
-    scheme, _, token = (authorization or "").partition(" ")
-    if scheme.lower() != "bearer" or not token:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    try:
-        claims = decode_access_token(request.app.state.settings, token)
-        if claims.get("typ") != "access":
-            raise ValueError("Unexpected token type")
-        return UUID(claims["sub"]), UUID(claims["sid"])
-    except (ValueError, jwt.InvalidTokenError) as error:
-        raise HTTPException(status_code=401, detail="Unauthorized") from error
-
-
-def access_identity(request: Request, authorization: Annotated[str | None, Header()] = None):
-    if not authorization and _is_web_request(request):
-        cookie_token = request.cookies.get(ACCESS_COOKIE)
-        if cookie_token:
-            authorization = f"Bearer {cookie_token}"
-    user_id, session_id = _identity(request, authorization)
-    db = _db(request)
-    try:
-        session = db.get(Session, session_id)
-        if session is None or session.user_id != user_id or session.revoked_at is not None or session.expires_at <= utc_now():
-            raise HTTPException(status_code=401, detail="Unauthorized")
-        return user_id, session_id
-    finally:
-        db.close()
 
 
 @router.get("/health")
@@ -162,7 +112,7 @@ def health():
 @router.post("/v1/auth/register", response_model=AuthResponse | WebAuthResponse, status_code=status.HTTP_201_CREATED)
 def register(payload: Credentials, request: Request, response: Response):
     email = _normalize_email(payload.email)
-    db = _db(request)
+    db = open_db(request)
     try:
         if db.scalar(select(User).where(User.email == email)) is not None:
             raise HTTPException(status_code=409, detail="Unable to register account")
@@ -187,7 +137,7 @@ def login(payload: Credentials, request: Request, response: Response):
     key = f"{request.client.host if request.client else 'unknown'}:{email}"
     if not request.app.state.login_rate_limiter.allow(key):
         raise HTTPException(status_code=429, detail="Too many login attempts")
-    db = _db(request)
+    db = open_db(request)
     try:
         user = db.scalar(select(User).where(User.email == email))
         valid = False
@@ -208,12 +158,12 @@ def login(payload: Credentials, request: Request, response: Response):
 @router.post("/v1/auth/refresh", response_model=TokenResponse | WebAuthResponse)
 def refresh(request: Request, response: Response, payload: RefreshRequest | None = None):
     refresh_token_value = payload.refresh_token if payload is not None else None
-    if _is_web_request(request):
+    if is_web_request(request):
         refresh_token_value = request.cookies.get(REFRESH_COOKIE)
     if not refresh_token_value:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    _require_csrf(request)
-    db = _db(request)
+    require_csrf(request)
+    db = open_db(request)
     try:
         session = db.scalar(select(Session).where(Session.refresh_token_hash == hash_refresh_token(refresh_token_value)).with_for_update())
         now = utc_now()
@@ -234,7 +184,7 @@ def refresh(request: Request, response: Response, payload: RefreshRequest | None
         replacement, refresh_token = _create_session(request, db, session.user_id, session.token_family_id)
         db.commit()
         access_token = create_access_token(request.app.state.settings, session.user_id, replacement.id)
-        if _is_web_request(request):
+        if is_web_request(request):
             _set_auth_cookies(request, response, access_token, refresh_token)
             user = db.get(User, session.user_id)
             return WebAuthResponse(user=UserResponse(id=user.id, email=user.email))
@@ -245,16 +195,16 @@ def refresh(request: Request, response: Response, payload: RefreshRequest | None
 
 @router.post("/v1/auth/logout")
 def logout(request: Request, response: Response, identity=Depends(access_identity)):
-    _require_csrf(request)
+    require_csrf(request)
     user_id, session_id = identity
-    db = _db(request)
+    db = open_db(request)
     try:
         session = db.get(Session, session_id)
         if session is not None and session.user_id == user_id:
             now = utc_now()
             db.execute(update(Session).where(Session.token_family_id == session.token_family_id).values(revoked_at=now))
             db.commit()
-        if _is_web_request(request):
+        if is_web_request(request):
             _clear_auth_cookies(response)
         return {"status": "ok"}
     finally:
@@ -263,9 +213,9 @@ def logout(request: Request, response: Response, identity=Depends(access_identit
 
 @router.post("/v1/auth/input")
 def record_input(request: Request, identity=Depends(access_identity)):
-    _require_csrf(request)
+    require_csrf(request)
     user_id, session_id = identity
-    db = _db(request)
+    db = open_db(request)
     try:
         session = db.get(Session, session_id)
         if session is None or session.user_id != user_id or session.revoked_at is not None:

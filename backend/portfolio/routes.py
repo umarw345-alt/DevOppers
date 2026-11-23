@@ -2,7 +2,7 @@
 
 import os
 import re
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
@@ -11,10 +11,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
 
-from auth_service.fastapi_routes import _db, _require_csrf, access_identity
-from auth_service.models import Portfolio, ResumeRecord
+from auth_service.dependencies import current_user_id, require_csrf
 from auth_service.security import utc_now
+from database import open_db
 from portfolio.generator import inline_css, render
+from portfolio.models import Portfolio, ResumeRecord
 from portfolio.schema import Resume, Theme
 from portfolio.themes import FONTS, TEMPLATES, TemplateId, ThemeError, resolve_theme
 from portfolio.wallet import PassError, build_pass
@@ -82,38 +83,38 @@ def preview(design: Design):
 
 
 @router.get("/portfolios")
-def list_mine(request: Request, identity=Depends(access_identity)):
-    with _db(request) as db:
+def list_mine(request: Request, user_id: UUID = Depends(current_user_id)):
+    with open_db(request) as db:
         rows = db.scalars(
             select(Portfolio)
             .options(selectinload(Portfolio.resume_record))
-            .where(Portfolio.user_id == identity[0])
+            .where(Portfolio.user_id == user_id)
             .order_by(Portfolio.updated_at.desc())
         )
         return [to_json(request, p) for p in rows]
 
 
 @router.put("/portfolios/{slug}")
-def publish(slug: str, design: Design, request: Request, identity=Depends(access_identity)):
+def publish(slug: str, design: Design, request: Request, user_id: UUID = Depends(current_user_id)):
     """Create or update the caller's portfolio at /<slug>."""
-    _require_csrf(request)
+    require_csrf(request)
     if not SLUG.match(slug) or slug in RESERVED:
         raise HTTPException(status_code=422, detail="Links are 3-40 lowercase letters, numbers and dashes.")
     render_page(design)
-    with _db(request) as db:
+    with open_db(request) as db:
         p = db.scalar(select(Portfolio).where(Portfolio.public_slug == slug).options(selectinload(Portfolio.resume_record)))
         if p is None:
             now = utc_now()
             resume_record = ResumeRecord(
                 id=uuid4(),
-                user_id=identity[0],
+                user_id=user_id,
                 resume_json=design.resume.model_dump(mode="json"),
                 created_at=now,
                 updated_at=now,
             )
             p = Portfolio(
                 id=uuid4(),
-                user_id=identity[0],
+                user_id=user_id,
                 resume_record=resume_record,
                 template_id=design.template_id,
                 theme_json=design.theme.model_dump(mode="json", exclude_none=True),
@@ -122,14 +123,14 @@ def publish(slug: str, design: Design, request: Request, identity=Depends(access
                 updated_at=now,
             )
             db.add(p)
-        elif p.user_id != identity[0]:
+        elif p.user_id != user_id:
             raise HTTPException(status_code=409, detail="That link is taken. Try another.")
         else:
             now = utc_now()
             if p.resume_record is None:
                 p.resume_record = ResumeRecord(
                     id=uuid4(),
-                    user_id=identity[0],
+                    user_id=user_id,
                     resume_json=design.resume.model_dump(mode="json"),
                     created_at=now,
                     updated_at=now,
@@ -148,18 +149,18 @@ def publish(slug: str, design: Design, request: Request, identity=Depends(access
 
 
 @router.delete("/portfolios/{slug}", status_code=204)
-def delete(slug: str, request: Request, identity=Depends(access_identity)):
-    _require_csrf(request)
-    with _db(request) as db:
+def delete(slug: str, request: Request, user_id: UUID = Depends(current_user_id)):
+    require_csrf(request)
+    with open_db(request) as db:
         p = db.scalar(select(Portfolio).where(Portfolio.public_slug == slug))
-        if p is None or p.user_id != identity[0]:
+        if p is None or p.user_id != user_id:
             raise HTTPException(status_code=404, detail="Portfolio not found.")
         db.delete(p)
         db.commit()
 
 
 def find(request: Request, slug: str) -> Portfolio:
-    with _db(request) as db:
+    with open_db(request) as db:
         p = db.scalar(select(Portfolio).where(Portfolio.public_slug == slug).options(selectinload(Portfolio.resume_record)))
     if p is None:
         raise HTTPException(status_code=404, detail="No portfolio at this link.")

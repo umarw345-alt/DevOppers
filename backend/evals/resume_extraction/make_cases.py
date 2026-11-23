@@ -6,7 +6,6 @@ two-column sidebar, dense two-page, low-quality scan), so the file and the answe
 always agree. Run from backend/:  uv run python -m evals.resume_extraction.make_cases
 """
 
-import json
 from pathlib import Path
 
 import pymupdf

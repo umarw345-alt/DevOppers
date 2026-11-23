@@ -27,7 +27,7 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
 from auth_service.config import load_settings  # noqa: E402
-from auth_service.db import create_session_factory  # noqa: E402
+from database import create_session_factory  # noqa: E402
 from auth_service.fastapi_routes import router as auth_router  # noqa: E402
 from auth_service.google_routes import router as google_router  # noqa: E402
 from auth_service.rate_limit import LoginRateLimiter  # noqa: E402
@@ -53,7 +53,7 @@ def create_app() -> FastAPI:
         allow_headers=["Authorization", "Content-Type", "Accept", "X-Client-Platform", "X-CSRF-Token"],
     )
     # /health and /v1/auth/* (register, login, refresh, logout, input).
-    # Use auth_service.fastapi_routes.access_identity to require a login on other routes.
+    # Other routes require a login with auth_service.dependencies.current_user_id.
     app.include_router(auth_router, tags=["auth"])
     app.include_router(google_router, tags=["auth"])
     # Each upload is a paid Claude call, so cap it per user: 10 uploads per 10 minutes.

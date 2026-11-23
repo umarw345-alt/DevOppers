@@ -9,10 +9,11 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
+from database import open_db
+
 from .fastapi_routes import (
     _auth_response,
     _create_session,
-    _db,
     _normalize_email,
 )
 from .google_oidc import (
@@ -86,7 +87,7 @@ def google_callback(request: Request, code: str | None = None, state: str | None
 
     email = _normalize_email(claims["email"])
     provider_subject = claims["sub"]
-    db = _db(request)
+    db = open_db(request)
     try:
         identity = db.scalar(
             select(ExternalIdentity).where(

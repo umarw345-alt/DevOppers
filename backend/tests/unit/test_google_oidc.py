@@ -248,7 +248,7 @@ def test_callback_creates_local_identity_and_issues_application_session(monkeypa
     db = FakeDatabase()
     issued = {}
 
-    monkeypatch.setattr(google_routes, "_db", lambda _: db)
+    monkeypatch.setattr(google_routes, "open_db", lambda _: db)
     monkeypatch.setattr(google_routes, "exchange_code", lambda *_: "google-id-token")
     monkeypatch.setattr(
         google_routes,
