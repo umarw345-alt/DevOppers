@@ -1,4 +1,4 @@
-"""Build the Expo web frontend into the combined deployment's public directory."""
+"""Build the Expo web frontend into web/, which the FastAPI app serves."""
 
 import os
 import shutil
@@ -8,7 +8,9 @@ from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parent
 REPOSITORY_DIR = BACKEND_DIR.parent
-PUBLIC_DIR = REPOSITORY_DIR / "public"
+# Not public/: for a FastAPI project Vercel neither serves public/ as static files
+# nor packs it into the function, so a build written there never reaches the site.
+WEB_DIR = REPOSITORY_DIR / "web"
 EXPORT_DIR = REPOSITORY_DIR / ".expo-vercel-build"
 
 
@@ -34,10 +36,8 @@ def main() -> None:
         run(command("npm"), "ci", cwd=REPOSITORY_DIR, env=build_env)
     if EXPORT_DIR.exists():
         shutil.rmtree(EXPORT_DIR)
-    # Expo copies everything in public/ into the export, so an old build there
-    # would end up in the new one (the page would load two copies of the app).
-    if PUBLIC_DIR.exists():
-        shutil.rmtree(PUBLIC_DIR)
+    if WEB_DIR.exists():
+        shutil.rmtree(WEB_DIR)
     run(
         command("npx"),
         "expo",
@@ -49,7 +49,7 @@ def main() -> None:
         cwd=REPOSITORY_DIR,
         env=build_env,
     )
-    shutil.copytree(EXPORT_DIR, PUBLIC_DIR)
+    shutil.copytree(EXPORT_DIR, WEB_DIR)
     shutil.rmtree(EXPORT_DIR)
 
 

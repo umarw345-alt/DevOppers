@@ -5,6 +5,7 @@ import { Draft, EMPTY_RESUME, Portfolio, TEMPLATES, deletePortfolio, extractResu
 import { Button, C, Page, Steps, T, WalletButtons, useWide } from '../theme';
 
 const READING = ['Reading your resume…', 'Finding your experience…', 'Organizing your skills…', 'Almost done…'];
+const initials = (name: string) => name.split(/\s+/).map((word) => word[0]).join('').slice(0, 2).toUpperCase();
 const blank: Draft = { resume: EMPTY_RESUME, template_id: 'modern', theme: {} };
 
 type Props = { token: string | null; email?: string; onOpen: (draft: Draft) => void; onLogout: () => void };
@@ -87,23 +88,31 @@ export default function Home({ token, email, onOpen, onLogout }: Props) {
 
       {!!portfolios?.length && (
         <>
-          <Text style={T.title}>Your portfolios</Text>
-          <Text style={T.dim}>Share the link, or add the card to Apple Wallet or Google Wallet for career fairs.</Text>
-          {actions}
-          <View style={{ flexDirection: wide ? 'row' : 'column', flexWrap: 'wrap', gap: 12, marginTop: 28 }}>
+          <View style={{ flexDirection: wide ? 'row' : 'column', justifyContent: 'space-between', alignItems: wide ? 'flex-end' : 'flex-start', gap: 4 }}>
+            <View>
+              <Text style={T.overline}>DASHBOARD</Text>
+              <Text style={T.title}>Your portfolios</Text>
+              <Text style={T.dim}>Share the link, or add the card to Apple Wallet or Google Wallet for career fairs.</Text>
+            </View>
+            {actions}
+          </View>
+          <View style={{ flexDirection: wide ? 'row' : 'column', flexWrap: 'wrap', gap: 16, marginTop: 32 }}>
             {portfolios.map((p) => (
-              <View key={p.slug} style={[T.card, { marginBottom: 0, flexBasis: wide ? '48%' : 'auto', flexGrow: 1 }]}>
-                <View style={T.row}>
-                  <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: p.theme.accent ?? TEMPLATES[p.template_id] }} />
-                  <Text style={[T.body, { fontSize: 18, fontWeight: '700' }]}>{p.resume.name}</Text>
-                </View>
-                {!!p.resume.headline && <Text style={T.dim}>{p.resume.headline}</Text>}
-                <Text selectable style={{ color: C.link, fontSize: 14 }}>{p.url}</Text>
-                <View style={[T.row, { marginTop: 8 }]}>
-                  <WalletButtons small url={p.url} />
-                  <Button small kind="secondary" label="View site" onPress={() => Linking.openURL(p.url)} />
-                  <Button small kind="secondary" label="Edit" onPress={() => onOpen(p)} />
-                  <Button small kind="ghost" label={confirmDelete === p.slug ? 'Tap again to delete' : 'Delete'} onPress={() => remove(p.slug)} />
+              <View key={p.slug} style={[T.card, { marginBottom: 0, padding: 0, overflow: 'hidden', flexBasis: wide ? '48%' : 'auto', flexGrow: wide ? 0 : 1 }]}>
+                <View style={{ height: 64, backgroundColor: p.theme.accent ?? TEMPLATES[p.template_id] }} />
+                <View style={{ padding: 22, paddingTop: 0, gap: 6 }}>
+                  <View style={{ width: 52, height: 52, borderRadius: 14, marginTop: -26, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: C.text, fontWeight: '700', fontSize: 17 }}>{initials(p.resume.name)}</Text>
+                  </View>
+                  <Text style={[T.body, { fontSize: 18, fontWeight: '700', marginTop: 6 }]}>{p.resume.name}</Text>
+                  {!!p.resume.headline && <Text style={T.dim}>{p.resume.headline}</Text>}
+                  <Text selectable style={{ color: C.link, fontSize: 14 }}>{p.url}</Text>
+                  <View style={[T.row, { marginTop: 10 }]}>
+                    <WalletButtons small url={p.url} />
+                    <Button small kind="secondary" label="View site" onPress={() => Linking.openURL(p.url)} />
+                    <Button small kind="secondary" label="Edit" onPress={() => onOpen(p)} />
+                    <Button small kind="ghost" label={confirmDelete === p.slug ? 'Tap again to delete' : 'Delete'} onPress={() => remove(p.slug)} />
+                  </View>
                 </View>
               </View>
             ))}

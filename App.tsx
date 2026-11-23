@@ -10,10 +10,20 @@ import Editor from './src/screens/Editor';
 import Home from './src/screens/Home';
 import Landing from './src/screens/Landing';
 
+// After a failed Google sign-in the server sends the browser back here with ?auth_error=<message>.
+function takeAuthError(): string | null {
+  if (Platform.OS !== 'web') return null;
+  const w = globalThis as any;
+  const message = new URLSearchParams(w.location.search).get('auth_error');
+  if (message) w.history.replaceState(null, '', w.location.pathname);
+  return message;
+}
+
 function App() {
   const { status, user, isLoading, error, accessToken, login, register, logout, recordInput, clearError } = useAuth();
   const [draft, setDraft] = useState<Draft | null>(null);
-  const [authMode, setAuthMode] = useState<'login' | 'register' | null>(null); // null = landing page
+  const [googleError, setGoogleError] = useState(takeAuthError);
+  const [authMode, setAuthMode] = useState<'login' | 'register' | null>(googleError ? 'login' : null); // null = landing page
   const lastInput = useRef(0);
 
   // On web, the browser's back button leaves a sub-screen (log in, editor) instead of leaving the site.
@@ -40,7 +50,7 @@ function App() {
     </View>
   ) : status === 'signed_out' ? (
     authMode
-      ? <Auth key={authMode} mode={authMode} error={error} isLoading={isLoading} onLogin={login} onRegister={register} onSwitch={clearError} onBack={() => { clearError(); setAuthMode(null); }} />
+      ? <Auth key={authMode} mode={authMode} error={googleError ?? error} isLoading={isLoading} onLogin={login} onRegister={register} onSwitch={() => { setGoogleError(null); clearError(); }} onBack={() => { setGoogleError(null); clearError(); setAuthMode(null); }} />
       : <Landing onSignUp={() => setAuthMode('register')} onLogIn={() => setAuthMode('login')} />
   ) : (
     // Touch on phones, mouse/pen clicks on the web.
@@ -53,7 +63,7 @@ function App() {
 
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="dark-content" />
       {content}
     </SafeAreaProvider>
   );
