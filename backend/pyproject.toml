@@ -24,6 +24,3 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-
-[tool.vercel.scripts]
-build = "python build_web.py"

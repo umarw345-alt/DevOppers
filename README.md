@@ -1,7 +1,7 @@
 # Portable Resume
 
 A student uploads a resume, checks what was read from it, and publishes it as a
-portfolio website at its own link (`PUBLIC_BASE_URL/<name>`, e.g. `abcd.com/jerry`).
+portfolio website at its own link (`<site>/<name>`, e.g. `devoppers.vercel.app/jerry`).
 The Apple Wallet card's QR code opens that link, so a recruiter scans it with no app
 and no login. Editing the portfolio later never needs a new card.
 
@@ -120,23 +120,34 @@ The pass type and team IDs are read from the certificate. To scan the QR code fr
 phone, set `PUBLIC_BASE_URL` to an address the phone can reach (your computer's LAN IP,
 e.g. `http://192.168.1.20:8000`, or a real domain later) and rebuild the API.
 
-## Deploy (live at https://devoppers.vercel.app)
+## Deploy
 
-One Vercel project (`devoppers`, rooted at `backend/`) runs the FastAPI app; the Expo web
-build is copied into `backend/public/` and served from Vercel's CDN on the same address.
-Postgres is a free Neon database added through the Vercel Marketplace.
+One Vercel project, rooted at the repository root, serves both halves on one address:
 
-```sh
-./scripts/deploy-vercel.sh        # build the web app and deploy to production
-```
+- `main.py` (root) is the FastAPI entry point; it loads the app from `backend/`.
+- `vercel.json` runs `backend/build_web.py`, which builds the Expo web app into `public/`.
+  The build leaves `EXPO_PUBLIC_API_BASE_URL` empty, so the web app calls whatever address
+  it was served from. The same build works on any domain.
+- Postgres is a free Neon database added through the Vercel Marketplace.
+
+Connect the Vercel project to this GitHub repository so every push to `main` deploys to
+production and every pull request gets a preview URL. Don't build `public/` locally or
+commit it; Vercel builds it.
 
 - **Migrations:** run `alembic upgrade head` from `backend/` with `DATABASE_URL` set to the
-  Neon `DATABASE_URL_UNPOOLED` (in `backend/.env.local` after `vercel env pull`).
+  Neon `DATABASE_URL_UNPOOLED` (from `vercel env pull`). Run it before deploying code
+  that needs a new migration.
 - **Secrets** live in Vercel env vars, never in files. Key and certificate files are passed
   base64-encoded as `JWT_PRIVATE_KEY_B64`, `JWT_PUBLIC_KEY_B64`, `PASS_P12_B64` and
   `WWDR_CERT_B64`; `main.py` writes them to temp files at startup.
-- Other production settings: `ANTHROPIC_API_KEY`, `PUBLIC_BASE_URL`, `CORS_ALLOWED_ORIGINS`,
-  `WEB_COOKIE_SECURE=true`, and `DAILY_UPLOAD_CAP` (site-wide resume reads per 24 hours, default 200).
+- **Other env vars:** `DATABASE_URL`, `ANTHROPIC_API_KEY`, `PASS_P12_PASSWORD`, and optionally
+  `DAILY_UPLOAD_CAP` (site-wide resume reads per 24 hours, default 200). Google sign-in
+  needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OIDC_STATE_SECRET`,
+  `GOOGLE_REDIRECT_URI` (`https://<site>/v1/auth/google/callback`, also registered in the
+  Google Cloud console) and `GOOGLE_FRONTEND_REDIRECT_URI` (`https://<site>`). Portfolio links
+  use the site's own address and cookies are Secure on Vercel automatically, so
+  `PUBLIC_BASE_URL` and `WEB_COOKIE_SECURE` aren't needed. `CORS_ALLOWED_ORIGINS` is only
+  needed if the web app is served from a different address than the API.
 - Vercel caps request bodies at 4.5 MB, so the app accepts resumes up to 4 MB.
 
 ## Run the web app
