@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Linking, Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Draft, EMPTY_ENTRY, Entry, Portfolio, Resume, TEMPLATES, previewHtml, savePortfolio, slugify } from '../api';
-import { Back, Button, C, Chip, Field, Page, T, WalletCard, useWide } from '../theme';
+import { Back, Button, C, Chip, Field, Page, T, WalletButtons, WalletCard, useWide } from '../theme';
 
 const ACCENTS = ['#1e3a8a', '#8b2e2e', '#0f766e', '#6d28d9', '#b45309', '#fbbf24'];
 const HIDEABLE = [['contact.email', 'Email'], ['contact.phone', 'Phone'], ['contact.location', 'Location']];
@@ -87,13 +87,13 @@ export default function Editor({ token, draft, onClose }: Props) {
               <Text selectable style={{ color: C.link, fontSize: 17, fontWeight: '600' }}>{published.url}</Text>
             </View>
             <View style={T.row}>
-              <Button label="Add to Apple Wallet" onPress={() => Linking.openURL(`${published.url}/pass.pkpass`)} />
+              <WalletButtons url={published.url} />
               <Button label="View site" kind="secondary" onPress={() => Linking.openURL(published.url)} />
               <Button label="Back to dashboard" kind="ghost" onPress={onClose} />
             </View>
             <Text style={[T.dim, { marginTop: 14, fontSize: 14 }]}>
-              Open this on your iPhone in Safari to add the card. On a Mac, AirDrop the downloaded card to your phone. The QR code
-              keeps working after you edit, so you never need a new card.
+              Add the card from your phone: Apple Wallet on an iPhone (in Safari), Google Wallet on Android. The QR code keeps
+              working after you edit, so you never need a new card.
             </Text>
           </View>
           <View style={{ flex: wide ? 1 : undefined }}>

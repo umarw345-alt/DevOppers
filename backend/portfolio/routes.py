@@ -5,7 +5,7 @@ import re
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -15,10 +15,11 @@ from auth_service.dependencies import current_user_id, require_csrf
 from auth_service.security import utc_now
 from database import open_db
 from portfolio.generator import inline_css, render
+from portfolio.google_wallet import GoogleWalletError, build_save_url
 from portfolio.models import Portfolio, ResumeRecord
 from portfolio.schema import Resume, Theme
 from portfolio.themes import FONTS, TEMPLATES, TemplateId, ThemeError, resolve_theme
-from portfolio.wallet import PassError, build_pass
+from portfolio.wallet import ICON, PassError, build_pass
 
 router = APIRouter(tags=["portfolio"])
 
@@ -169,6 +170,12 @@ def find(request: Request, slug: str) -> Portfolio:
     return p
 
 
+@router.get("/google-wallet-logo.png", include_in_schema=False)
+def google_wallet_logo():
+    """The card logo. Google downloads it from this public URL instead of reading it from the card."""
+    return Response(ICON, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+
 # ponytail: rendered on every visit instead of pre-built onto a CDN; fine for a class demo, cache or pre-render when traffic is real.
 @router.get("/{slug}", response_class=HTMLResponse, include_in_schema=False)
 def public_page(slug: str, request: Request):
@@ -194,3 +201,24 @@ def wallet_pass(slug: str, request: Request):
     except PassError as error:
         raise HTTPException(status_code=503, detail=str(error))
     return Response(data, media_type="application/vnd.apple.pkpass", headers={"Content-Disposition": f'attachment; filename="{slug}.pkpass"'})
+
+
+@router.get("/{slug}/google-wallet", include_in_schema=False)
+def google_wallet(slug: str, request: Request):
+    """Send the browser to Google's "Add to Google Wallet" page for this portfolio's card.
+    Public, like the Apple pass: the card only holds the name, title and public link."""
+    p = find(request, slug)
+    design = Design(resume=p.resume_record.resume_json, template_id=p.template_id, theme=p.theme_json or {})
+    logo_url = public_url(request, "google-wallet-logo.png")
+    try:
+        save_url = build_save_url(
+            slug=slug,
+            name=design.resume.contact.name,
+            headline=design.resume.contact.headline,
+            url=public_url(request, slug),
+            color=resolve_theme(design.template_id, design.theme).accent,
+            logo_url=logo_url if logo_url.startswith("https://") else None,
+        )
+    except GoogleWalletError as error:
+        raise HTTPException(status_code=503, detail=str(error))
+    return RedirectResponse(save_url, status_code=303)

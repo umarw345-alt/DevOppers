@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s - %(
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 # Hosts without secret files (Vercel) pass each one base64-encoded as <NAME>_B64; write it out and point <NAME>_PATH at it.
-for name in ("JWT_PRIVATE_KEY", "JWT_PUBLIC_KEY", "PASS_P12", "WWDR_CERT"):
+for name in ("JWT_PRIVATE_KEY", "JWT_PUBLIC_KEY", "PASS_P12", "WWDR_CERT", "GOOGLE_WALLET_KEY"):
     if encoded := os.getenv(f"{name}_B64"):
         secret = Path(tempfile.gettempdir()) / name.lower()
         secret.write_bytes(base64.b64decode(encoded))

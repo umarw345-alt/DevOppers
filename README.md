@@ -2,14 +2,14 @@
 
 A student uploads a resume, checks what was read from it, and publishes it as a
 portfolio website at its own link (`<site>/<name>`, e.g. `devoppers.vercel.app/jerry`).
-The Apple Wallet card's QR code opens that link, so a recruiter scans it with no app
+The Wallet card's QR code (Apple Wallet or Google Wallet) opens that link, so a recruiter scans it with no app
 and no login. Editing the portfolio later never needs a new card.
 
 1. Log in or create an account (email + password).
 2. **Upload resume** (PDF/JPG/PNG, read by Claude) or **Start blank**.
 3. Fix the details, hide your phone/email/location if you like, pick a template and color.
 4. **Publish**. Your page is live at the link shown.
-5. On your iPhone, tap **Add to Apple Wallet**.
+5. On your phone, tap **Add to Apple Wallet** (iPhone) or **Add to Google Wallet** (Android).
 
 ## Architecture
 
@@ -120,6 +120,34 @@ The pass type and team IDs are read from the certificate. To scan the QR code fr
 phone, set `PUBLIC_BASE_URL` to an address the phone can reach (your computer's LAN IP,
 e.g. `http://192.168.1.20:8000`, or a real domain later) and rebuild the API.
 
+## Google Wallet setup
+
+Google Wallet cards are free to issue. The server signs each card with a Google Cloud
+service-account key; there is no file to download, the button opens Google's "Add to
+Google Wallet" page. Without this setup everything else works and the button answers 503.
+
+1. **Issuer account.** Go to the [Google Pay & Wallet Console](https://pay.google.com/business/console),
+   sign in with a personal Google account, open **Google Wallet API**, and finish the
+   sign-up (business name: e.g. "Portable Resume"). Copy the **Issuer ID** it shows.
+2. **Service account.** In the [Google Cloud console](https://console.cloud.google.com/):
+   create a project, open **APIs & Services → Library**, enable **Google Wallet API**,
+   then **IAM & Admin → Service Accounts → Create service account** (no roles needed).
+   Open it, **Keys → Add key → Create new key → JSON**, and save the file as
+   `secrets/google-wallet.json`. Never commit it.
+3. **Let the service account issue cards.** Back in the Wallet Console, open **Users**,
+   invite the service account's email (from the JSON, `client_email`) with the
+   **Developer** role.
+4. **Testers.** New issuer accounts are in demo mode: only the account's own users and
+   test accounts can save cards, and card titles show "[TEST ONLY]". Under
+   **Google Wallet API**, add the Google accounts of every phone you'll demo on as test
+   accounts. Anyone else needs Google's approval ("Request publishing access").
+5. **Configure the API.** In `.env`, set `GOOGLE_WALLET_ISSUER_ID` and
+   `GOOGLE_WALLET_KEY_PATH=../secrets/google-wallet.json`, then restart the API.
+
+Google downloads the card's logo from `<site>/google-wallet-logo.png`, so it appears
+only when the site is served over HTTPS (on Vercel, not `localhost`). A saved card
+keeps the name and color it was saved with; the QR code always opens the current page.
+
 ## Deploy
 
 One Vercel project, rooted at the repository root, serves both halves on one address:
@@ -140,9 +168,9 @@ commit it; Vercel builds it.
   which keeps the old last revision's ID, so databases that ran the older migrations need nothing.
   One that stopped before `005_portfolio_schema_compat` can't upgrade and is easiest to recreate.
 - **Secrets** live in Vercel env vars, never in files. Key and certificate files are passed
-  base64-encoded as `JWT_PRIVATE_KEY_B64`, `JWT_PUBLIC_KEY_B64`, `PASS_P12_B64` and
-  `WWDR_CERT_B64`; `main.py` writes them to temp files at startup.
-- **Other env vars:** `DATABASE_URL`, `ANTHROPIC_API_KEY`, `PASS_P12_PASSWORD`, and optionally
+  base64-encoded as `JWT_PRIVATE_KEY_B64`, `JWT_PUBLIC_KEY_B64`, `PASS_P12_B64`,
+  `WWDR_CERT_B64` and `GOOGLE_WALLET_KEY_B64`; `main.py` writes them to temp files at startup.
+- **Other env vars:** `DATABASE_URL`, `ANTHROPIC_API_KEY`, `PASS_P12_PASSWORD`, `GOOGLE_WALLET_ISSUER_ID`, and optionally
   `DAILY_UPLOAD_CAP` (site-wide resume reads per 24 hours, default 200). Google sign-in
   needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OIDC_STATE_SECRET`,
   `GOOGLE_REDIRECT_URI` (`https://<site>/v1/auth/google/callback`, also registered in the
@@ -262,6 +290,8 @@ PUT    /portfolios/{slug}         publish or update (login required)
 DELETE /portfolios/{slug}         (login required)
 GET    /{slug}                    public portfolio page
 GET    /{slug}/pass.pkpass        Apple Wallet pass
+GET    /{slug}/google-wallet      redirect to Google's "Add to Google Wallet" page
+GET    /google-wallet-logo.png    card logo Google downloads
 ```
 
 ## Troubleshooting

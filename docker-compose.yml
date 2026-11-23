@@ -67,6 +67,8 @@ services:
       PASS_P12_PATH: /run/secrets/pass.p12
       PASS_P12_PASSWORD: ${PASS_P12_PASSWORD:-}
       WWDR_CERT_PATH: /run/secrets/wwdr.cer
+      GOOGLE_WALLET_ISSUER_ID: ${GOOGLE_WALLET_ISSUER_ID:-}
+      GOOGLE_WALLET_KEY_PATH: /run/secrets/google-wallet.json
     ports:
       - "8000:8000"
     volumes:
