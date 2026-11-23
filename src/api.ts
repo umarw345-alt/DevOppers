@@ -17,7 +17,7 @@ export type Theme = { accent?: string; font?: string };
 export type Draft = { slug?: string; resume: Resume; template_id: string; theme: Theme };
 export type Portfolio = Draft & { slug: string; url: string };
 
-// Template -> its default accent color (backend/portfolio/themes.py)
+// Template -> its default accent color. Must match backend/portfolio/themes.py (checked by backend/tests/unit/test_frontend_templates.py).
 export const TEMPLATES: Record<string, string> = { modern: '#1e3a8a', classic: '#8b2e2e', minimal: '#b4321f', dark: '#fbbf24' };
 export const EMPTY_ENTRY: Entry = { organization: '', title: '', start: '', end: '', bullets: '' };
 export const EMPTY_RESUME: Resume = {
