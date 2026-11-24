@@ -58,9 +58,9 @@ def to_json(request: Request, p: Portfolio) -> dict:
     }
 
 
-def render_page(design: Design) -> str:
+def render_page(design: Design, wallet_url: str | None = None) -> str:
     try:
-        return inline_css(render(design.resume, design.template_id, design.theme))
+        return inline_css(render(design.resume, design.template_id, design.theme, wallet_url))
     except ThemeError as error:
         raise HTTPException(status_code=422, detail=str(error))
 
@@ -181,7 +181,7 @@ def google_wallet_logo():
 def public_page(slug: str, request: Request):
     """What a recruiter sees after scanning the QR code. No login needed."""
     p = find(request, slug)
-    return render_page(Design(resume=p.resume_record.resume_json, template_id=p.template_id, theme=p.theme_json or {}))
+    return render_page(Design(resume=p.resume_record.resume_json, template_id=p.template_id, theme=p.theme_json or {}), f"/{slug}/pass.pkpass")
 
 
 @router.get("/{slug}/pass.pkpass", include_in_schema=False)

@@ -54,7 +54,7 @@ env = Environment(
 env.filters["date_range"] = date_range
 
 
-def render(resume: Resume, template_id: str, theme: Theme | None = None) -> dict[str, str]:
+def render(resume: Resume, template_id: str, theme: Theme | None = None, wallet_url: str | None = None) -> dict[str, str]:
     """Build the portfolio site for a resume using one of the TEMPLATE_IDS and the
     user's optional theme. Returns the site's files as {filename: contents},
     ready to save or upload. Raises ThemeError for an unreadable accent color."""
@@ -66,6 +66,7 @@ def render(resume: Resume, template_id: str, theme: Theme | None = None) -> dict
         sections=resolved.sections,
         font_url=resolved.font.url,
         theme_css=Markup(theme_css(resolved)),
+        wallet_url=wallet_url,
     )
     css = (TEMPLATES_DIR / template_id / "style.css").read_text(encoding="utf-8")
     return {"index.html": html, "style.css": css}

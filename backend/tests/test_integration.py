@@ -374,6 +374,8 @@ def test_published_portfolio_is_public_and_only_its_owner_can_change_it():
 
     assert send(opener, f"/portfolios/{slug}", payload=portfolio, headers=owner, method="PUT")[0] == 200
     assert send(opener, f"/portfolios/{slug}", payload=portfolio, headers=stranger, method="PUT")[0] == 409
-    assert "Ada Lovelace" in opener.open(f"{BASE_URL}/{slug}", timeout=10).read().decode()
+    page = opener.open(f"{BASE_URL}/{slug}", timeout=10).read().decode()
+    assert "Ada Lovelace" in page
+    assert f'href="/{slug}/pass.pkpass"' in page
     assert send(opener, f"/portfolios/{slug}", headers=stranger, method="DELETE")[0] == 404
     assert send(opener, f"/portfolios/{slug}", headers=owner, method="DELETE")[0] == 204
