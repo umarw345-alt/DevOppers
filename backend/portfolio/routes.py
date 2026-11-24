@@ -19,7 +19,7 @@ from portfolio.google_wallet import GoogleWalletError, build_save_url
 from portfolio.models import Portfolio, ResumeRecord
 from portfolio.schema import Resume, Theme
 from portfolio.themes import FONTS, TEMPLATES, TemplateId, ThemeError, resolve_theme
-from portfolio.wallet import ICON, PassError, build_pass
+from portfolio.wallet import ICON, PassError, build_pass, signer
 
 router = APIRouter(tags=["portfolio"])
 
@@ -58,9 +58,9 @@ def to_json(request: Request, p: Portfolio) -> dict:
     }
 
 
-def render_page(design: Design) -> str:
+def render_page(design: Design, wallet_url: str | None = None) -> str:
     try:
-        return inline_css(render(design.resume, design.template_id, design.theme))
+        return inline_css(render(design.resume, design.template_id, design.theme, wallet_url))
     except ThemeError as error:
         raise HTTPException(status_code=422, detail=str(error))
 
@@ -181,7 +181,12 @@ def google_wallet_logo():
 def public_page(slug: str, request: Request):
     """What a recruiter sees after scanning the QR code. No login needed."""
     p = find(request, slug)
-    return render_page(Design(resume=p.resume_record.resume_json, template_id=p.template_id, theme=p.theme_json or {}))
+    try:
+        signer()
+        wallet_url = f"/{slug}/pass.pkpass"
+    except PassError:
+        wallet_url = None
+    return render_page(Design(resume=p.resume_record.resume_json, template_id=p.template_id, theme=p.theme_json or {}), wallet_url)
 
 
 @router.get("/{slug}/pass.pkpass", include_in_schema=False)

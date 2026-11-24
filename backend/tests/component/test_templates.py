@@ -144,6 +144,15 @@ def test_every_section_renders_exactly_once(full_resume, template_id):
         assert html.count(f">{heading}</h2>") == 1
 
 
+def test_wallet_button_only_on_published_pages(full_resume, template_id):
+    resume = Resume.model_validate(full_resume)
+    published = parse(render(resume, template_id, wallet_url="/jordan-lee/pass.pkpass")["index.html"])
+    assert [a for a in published.find("a") if a.get("class") == "add-to-wallet"] == [
+        {"class": "add-to-wallet", "href": "/jordan-lee/pass.pkpass"}
+    ]
+    assert "add-to-wallet" not in render(resume, template_id)["index.html"]
+
+
 @pytest.mark.parametrize("name, initials", [("Jordan Lee", "JL"), ("Cher", "C"), ("mary ann de la cruz", "MA")])
 def test_modern_monogram_uses_initials(name, initials):
     html = build({"contact": {"name": name}}, "modern")["index.html"]
